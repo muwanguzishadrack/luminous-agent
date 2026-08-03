@@ -28,11 +28,20 @@ Pin PHP for this site:
 herd isolate php@8.4
 ```
 
-**Herd does not run queue workers or schedulers.** Run those yourself:
+**Herd serves the app only.** Queue workers, the scheduler and Reverb run as containers in the dev
+stack (D-019), so they start with `docker compose up -d`:
+
+| Service | Command | Notes |
+|---|---|---|
+| `horizon` | `php artisan horizon` | all eight queues; 30s grace period so in-flight jobs finish |
+| `scheduler` | `php artisan schedule:work` | analytics pulls, token refresh, recrawls |
+| `reverb` | `php artisan reverb:start` | websockets, published on host port 58085 |
+
+They share `docker/worker/Dockerfile` and bind-mount the project, so **after changing PHP that a
+worker executes, restart it** — a running worker holds the old code in memory:
 
 ```bash
-php artisan horizon          # all queues
-php artisan schedule:work    # cron-driven jobs (analytics pulls, token refresh, recrawls)
+docker compose -f docker/compose.dev.yml restart horizon
 ```
 
 ---

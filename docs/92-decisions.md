@@ -280,6 +280,32 @@ interface boundary that M5 already defines.
 
 ---
 
+## D-019 — App-side background processes run in the dev Docker stack (amends D-003)
+
+**Date:** 2026-08-03 · **Status:** accepted (user decision)
+
+**Context.** D-003 kept Docker to backing services and left queue workers to be started by hand
+(`php artisan horizon`). In practice a forgotten worker means webhook deliveries silently pile up as
+`pending` — the failure is invisible until someone looks at the table. Separately, prerequisite D6
+always said Reverb "runs in the same Docker stack", but no service existed.
+
+**Decision.** `docker/compose.dev.yml` now also runs **horizon**, **scheduler** and **reverb** from a
+small `docker/worker/Dockerfile` (php:8.4-cli-alpine + pdo_pgsql, redis, intl, bcmath, gd, zip and
+**pcntl**, which Horizon requires). They bind-mount the project, so code edits need only a container
+restart, and take service-network env overrides (`DB_HOST=postgres`, `REDIS_HOST=redis`, …) which win
+because Laravel's dotenv repository is immutable. Horizon gets a 30s `stop_grace_period` so in-flight
+jobs finish rather than being killed mid-delivery.
+
+**Consequences.** `docker compose up -d` yields a complete working environment; Herd still serves the
+app (D-003's serving model is unchanged). Trade-off: the worker image's PHP must stay in step with
+Herd's, and `vendor/` is shared across host and container — fine because it holds no
+platform-specific binaries we depend on.
+
+**Rejected.** Sail (D-003 stands: too slow on macOS for the request path); a supervisor on the host
+(no auto-start with the stack, and one more thing to install).
+
+---
+
 ## Template for new entries
 
 ```
