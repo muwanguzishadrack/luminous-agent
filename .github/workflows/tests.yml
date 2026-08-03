@@ -1,0 +1,84 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: luminous
+          POSTGRES_USER: luminous
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U luminous -d luminous"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 56379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Provision database roles and test database
+        env:
+          PGPASSWORD: secret
+        run: |
+          psql -h 127.0.0.1 -p 55432 -U luminous -d luminous -f docker/postgres/init/01-extensions.sql
+          psql -h 127.0.0.1 -p 55432 -U luminous -d luminous -f docker/postgres/init/02-roles.sql
+          psql -h 127.0.0.1 -p 55432 -U luminous -d luminous -f docker/postgres/init/03-test-db.sql
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, redis, intl, bcmath, gd
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Install JS dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Migrations run clean from empty (Phase 0 exit criterion)
+        run: php artisan migrate:fresh --database=pgsql_migrator --force
+
+      - name: Run CI checks
+        run: composer ci:check

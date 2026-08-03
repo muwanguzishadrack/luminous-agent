@@ -1,0 +1,292 @@
+# 92 — Decision Log
+
+Append-only. Each entry: context, decision, consequences, status. Amend by adding a superseding entry,
+never by editing history.
+
+---
+
+## D-001 — Laravel monolith with Inertia, not a separate API + SPA
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Context.** The product is a dense internal tool (inbox, tables, builders) for authenticated users,
+plus four small public HTTP surfaces.
+
+**Decision.** One Laravel 13 app serving Inertia 3 + React 19. No separate API service for the UI. A
+tenant-facing public API is a thin additional layer, not the primary consumer.
+
+**Consequences.** No client-side data layer to maintain; server is the single source of truth; typed
+props generated from PHP. Trade-off: React Native or a third-party UI would need the public API built
+first.
+
+---
+
+## D-002 — Single database, `tenant_id` column, not database-per-tenant
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Context.** Multi-tenant SaaS with potentially thousands of small tenants. Cross-tenant queries are
+needed for our own platform analytics and health monitoring.
+
+**Decision.** One Postgres database. `tenant_id` on every tenant-scoped table. Three enforcement
+layers: Eloquent global scope, **Postgres RLS**, and policies.
+
+**Consequences.** Simple migrations, cheap onboarding, easy platform-wide reporting. The risk is a
+missing scope, which RLS is specifically there to catch. Requires the tenant-isolation test suite in
+`06-testing-strategy.md` §2 as a permanent gate.
+
+**Rejected:** `stancl/tenancy` multi-database — operationally heavy for thousands of small tenants,
+and makes our own cross-tenant analytics painful.
+
+---
+
+## D-003 — Herd for serving, Docker for backing services, no Sail
+
+**Date:** 2026-08-01 · **Status:** accepted (user decision)
+
+**Decision.** Herd serves the app at `https://luminous-commerce.test`. Docker Compose provides
+Postgres, Redis, Meilisearch, MinIO, Mailpit on non-default ports. A separate
+`docker/compose.parity.yml` containerises the app for pre-deploy verification.
+
+**Consequences.** Fast local iteration; production-parity is an explicit, on-demand harness rather
+than the default dev loop. Queue workers and the scheduler must be run manually.
+
+---
+
+## D-004 — Named Cloudflare tunnel, never a quick tunnel
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Context.** Three external systems need a stable inbound URL: Meta webhooks, **ioTec callbacks
+(configured per wallet in their portal UI, not per request)**, and MBA connectors (registered with
+Meta as a base URL).
+
+**Decision.** A named tunnel bound to a hostname on a Cloudflare-managed zone.
+
+**Consequences.** Requires a domain on Cloudflare (prerequisite B1). Eliminates the daily churn of
+re-pasting a random `trycloudflare.com` URL into two external portals.
+
+---
+
+## D-005 — Tech Provider model; no Multi-Partner Solution in v1
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Context.** As a Tech Provider we have no credit line. Clients attach their own payment method and
+Meta bills them directly. A Multi-Partner Solution with a Solution Partner would let their credit line
+cover our clients.
+
+**Decision.** Ship the Tech Provider model. Build a payment-readiness gate in onboarding (M0 §4).
+Defer Multi-Partner Solutions.
+
+**Consequences.** Onboarding friction — the client must add a card before messaging. If that proves
+to be the main drop-off point, revisit. Note the solution model caps onboarding at 200 new clients per
+rolling week, which is not currently a constraint.
+
+---
+
+## D-006 — Meta Business Agent instead of our own LLM agent
+
+**Date:** 2026-08-01 · **Status:** accepted (user decision)
+
+**Context.** MBA is a managed agent with conversation context, catalog grounding, tool calling via
+Connectors, and event-driven proactivity. Building an equivalent means RAG, evals, hosting, and
+guardrails per tenant.
+
+**Decision.** Use MBA. Do not build a custom agent in v1.
+
+**Consequences.**
+- Fast per-client setup; no AI engineering per tenant.
+- **Cost is $2.00/1M tokens ≈ 4–5¢ per message, charged even inside the 24h and 72h windows.**
+- **Limited to 5 verticals** — clients outside them get no AI (risk R1, question D2).
+- Our differentiation moves to the Connector layer and handover orchestration, which is where M5 puts
+  the effort.
+- Architectural cost: MBA becomes the primary responder and our app is a standby participant, which
+  forces the thread-ownership state machine into M1.
+
+---
+
+## D-007 — Open: fallback agent for non-MBA verticals
+
+**Date:** 2026-08-01 · **Status:** **open — needs your answer (prerequisite D2)**
+
+**Context.** MBA covers Automotive, CPG, Professional Services, Retail & Ecommerce, Travel only.
+Healthcare, education, fintech, logistics, and NGOs are excluded.
+
+**Options.** (a) Accept the gap — those clients get an inbox with no AI. (b) Build a minimal
+bring-your-own-LLM agent in Phase 4 behind the same `AgentProvider` interface.
+
+**Blocked on:** the vertical mix of your pipeline.
+
+---
+
+## D-008 — ioTec Pay as the only payment provider, behind an interface
+
+**Date:** 2026-08-01 · **Status:** accepted (user decision)
+
+**Context.** Native WhatsApp payments exist only in India and Brazil. Uganda needs an external rail.
+ioTec Pay covers MTN and Airtel mobile money, cards via PegPay, and bank transfers, in `UGX`/`USD`
+with an `ITX` sandbox.
+
+**Decision.** ioTec Pay only, but behind a `PaymentProvider` interface (M6 §4).
+
+**Consequences.** The interface isolates three ioTec-specific hazards from the domain: `double`
+amounts, a 300-second access token, and callbacks that fire for only three of nine statuses.
+
+---
+
+## D-009 — We generate `external_id`; ioTec's `id` is authoritative
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Context.** ioTec's spec states explicitly that `externalId` "is not required to be unique."
+
+**Decision.** Generate a ULID per attempt, unique-indexed per tenant. Treat ioTec's `id` (uuid) as the
+authoritative reference for reconciliation. Retries always create a **new** `external_id`.
+
+**Consequences.** Reconciliation joins on `provider_id`, with `external-id/{externalId}` as a recovery
+path when a create response is lost in flight.
+
+---
+
+## D-010 — Mandatory status re-fetch on every ioTec callback
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Context.** ioTec authenticates callbacks with a **static per-wallet header**, not an HMAC over the
+body. A leaked or guessed value could fabricate a payment.
+
+**Decision.** Verify the header, then **always re-fetch the transaction from the API and trust that
+response**, never the callback body, before crediting anything.
+
+**Consequences.** One extra API call per callback. Worth it — this is the control that makes fake
+payment injection impractical.
+
+---
+
+## D-011 — Reconciliation poller is mandatory, not a fallback
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Context.** ioTec sends callbacks only for `Success`, `Failed`, `SentToVendor`. Five other statuses
+(`Pending`, `AwaitingApproval`, `Scheduled`, `RolledBack`, `Cancelled`, `Rejected`) never arrive.
+
+**Decision.** A poller with backoff 10s → 30s → 1m → 5m → 15m → hourly to a 24h cap, plus a daily
+reconciliation against `paged-history` and wallet balance.
+
+**Consequences.** Scheduled and awaiting-approval payments resolve correctly. Discrepancies raise a
+task; money is never silently adjusted.
+
+---
+
+## D-012 — Append-only for consent, money, and status
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Decision.** `consents`, `usage_meters`, `wallet_entries`, `payment_events`, `message_events`,
+`template_events`, `thread_control_events`, `webhook_deliveries`, `audit_logs` are append-only. Current
+state lives in materialised read models (`consent_states`, `payments.status`, `messages.status`).
+
+**Consequences.** Full auditability and safe replay. Corrections are new rows, so historical invoices
+and compliance evidence are reproducible. Costs storage and requires the materialisers to be
+idempotent.
+
+---
+
+## D-013 — Never block inbound processing for a billing reason
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Decision.** A zero or negative wallet balance blocks campaign starts and (configurably) MBA replies.
+It **never** blocks webhook ingest or inbound message persistence.
+
+**Consequences.** Losing a customer's message because a client's wallet ran dry would breach the
+"never drop a webhook" invariant. Asserted by a test (M8 AC7).
+
+---
+
+## D-014 — Explicit takeover from the AI, never implicit
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Context.** Per Meta, our app takes thread control **simply by sending a message**. An agent typing
+into a thread silently ends the AI's involvement.
+
+**Decision.** While `state = ai` the composer is disabled behind an explicit "Take over from AI"
+action. Hand-back calls Thread Control `pass` with structured `metadata`. All transitions logged to
+`thread_control_events`.
+
+**Consequences.** One extra click for agents, in exchange for not accidentally disabling a paid AI
+mid-conversation and not leaving the customer with two responders.
+
+---
+
+## D-015 — MBA token costs estimated and labelled until Meta ships analytics
+
+**Date:** 2026-08-01 · **Status:** accepted, pending H1
+
+**Context.** MBA charging began Aug 1, 2026, but Meta's MBA analytics and webhook payload details were
+still listed as forthcoming.
+
+**Decision.** Estimate tokens as `messages × 22,500` (midpoint of Meta's stated 20k–25k) and **label
+every MBA figure in the UI as an estimate**. Switch to real data and backfill when available.
+
+**Consequences.** Billing on estimates is not acceptable long-term. Until real data exists, MBA token
+charges are shown as indicative and not invoiced at margin.
+
+---
+
+## D-016 — Pin the Graph API version in config
+
+**Date:** 2026-08-01 · **Status:** accepted
+
+**Decision.** `config('meta.graph_version')`, assumed `v25.0`. No unversioned Graph URLs. A nightly CI
+job asserts the pinned version is still supported.
+
+**Consequences.** Upgrades are deliberate and testable rather than silent breakage.
+
+---
+
+## D-017 — Pin Graph API `v26.0` at project start (updates the value assumed in D-016)
+
+**Date:** 2026-08-03 · **Status:** accepted
+
+**Context.** D-016 assumed `v25.0`. A DevTools deprecations check on 2026-08-03 shows the latest
+platform version is `v26.0` (released 2026-07-29) with no deprecations affecting our app. The v26.0
+Commerce endpoint blocks target Facebook/Instagram Shops order management, not WhatsApp catalogs or
+product messages, so M6 is unaffected. Nothing is built yet, so there is no migration cost.
+
+**Decision.** Pin `v26.0` in `config('meta.graph_version')`. The D-016 mechanism (pinned in config,
+nightly CI support check, deliberate upgrades) is unchanged.
+
+**Consequences.** Longest possible runway before a forced version upgrade (~2 years). References
+and `.env` examples updated to `v26.0` in the same change.
+
+---
+
+## D-018 — No fallback agent: all pipeline is within MBA's verticals (resolves D-007)
+
+**Date:** 2026-08-03 · **Status:** accepted (user decision)
+
+**Context.** D-007 was open pending the vertical mix of the client pipeline (prerequisite D2). The
+user confirmed all pipeline clients fall within MBA's five supported verticals (Automotive, CPG,
+Professional Services, Retail & Ecommerce, Travel).
+
+**Decision.** Option (a): no bring-your-own-LLM fallback agent. MBA is the only agent in v1.
+
+**Consequences.** Risk R1 in `00-product-brief.md` is closed. The Phase 4 fallback-agent decision
+point drops off the roadmap. If the pipeline mix changes, reopen behind the same `AgentProvider`
+interface boundary that M5 already defines.
+
+---
+
+## Template for new entries
+
+```
+## D-0NN — <short title>
+**Date:** YYYY-MM-DD · **Status:** proposed | accepted | superseded by D-0NN | open
+**Context.** Why a decision is needed.
+**Decision.** What we chose.
+**Consequences.** What this costs and enables.
+**Rejected.** Alternatives and why not.
+```
