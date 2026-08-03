@@ -1,0 +1,25 @@
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "102290129340398",
+            "time": 1754236800,
+            "changes": [
+                {
+                    "field": "account_update",
+                    "value": {
+                        "event": "PARTNER_REMOVED",
+                        "waba_info": {
+                            "waba_id": "102290129340398",
+                            "owner_business_id": "506914307656634",
+                            "disconnection_info": {
+                                "initiated_by": "CLIENT",
+                                "reason": "Client removed the partner app in Business Manager"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

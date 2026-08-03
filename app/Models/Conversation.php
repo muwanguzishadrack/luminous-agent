@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Enums\ConversationState;
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -47,6 +49,9 @@ use Illuminate\Support\Carbon;
 class Conversation extends Model
 {
     use BelongsToTenant, HasUuids;
+
+    /** @use HasFactory<ConversationFactory> */
+    use HasFactory;
 
     /**
      * The table carries no created_at / updated_at pair.

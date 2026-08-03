@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\IotecWalletFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -32,7 +34,10 @@ use Illuminate\Support\Carbon;
 #[Fillable(['iotec_wallet_id', 'name', 'currency', 'actual_balance_minor', 'available_balance_minor', 'collection_callback_url', 'disbursement_callback_url', 'callback_header_name', 'callback_header_value', 'last_synced_at'])]
 class IotecWallet extends Model
 {
-    use BelongsToTenant, HasUuids;
+    /** @use HasFactory<IotecWalletFactory> */
+    use HasFactory;
+
+    use HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.
@@ -62,5 +67,16 @@ class IotecWallet extends Model
             'callback_header_value' => 'encrypted',
             'last_synced_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Nullable by design: rows are created platform-level before any tenant
+     * context exists (docs/02 §3) — hence no BelongsToTenant trait.
+     *
+     * @return BelongsTo<Tenant, $this>
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 }

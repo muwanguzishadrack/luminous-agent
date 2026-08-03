@@ -22,6 +22,7 @@ abstract class TestCase extends BaseTestCase
 
         $this->app->singleton(GraphClient::class, FakeGraphClient::class);
         $this->app->singleton(IotecClient::class, FakeIotecClient::class);
+
     }
 
     protected function skipUnlessFortifyHas(string $feature, ?string $message = null): void

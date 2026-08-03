@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\TemplateGroupFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -25,6 +27,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class TemplateGroup extends Model
 {
     use BelongsToTenant, HasUuids;
+
+    /** @use HasFactory<TemplateGroupFactory> */
+    use HasFactory;
 
     /**
      * The table associated with the model.

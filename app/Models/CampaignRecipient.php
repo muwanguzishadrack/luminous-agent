@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\CampaignRecipientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -39,6 +41,9 @@ use Illuminate\Support\Carbon;
 class CampaignRecipient extends Model
 {
     use BelongsToTenant;
+
+    /** @use HasFactory<CampaignRecipientFactory> */
+    use HasFactory;
 
     /**
      * The table carries no created_at / updated_at pair.

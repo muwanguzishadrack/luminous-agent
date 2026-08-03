@@ -6,9 +6,11 @@ use App\Enums\MessageDirection;
 use App\Enums\MessageOrigin;
 use App\Enums\MessageStatus;
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\MessageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -54,6 +56,9 @@ use Illuminate\Support\Carbon;
 class Message extends Model
 {
     use BelongsToTenant, HasUuids;
+
+    /** @use HasFactory<MessageFactory> */
+    use HasFactory;
 
     /**
      * The table carries no created_at / updated_at pair.

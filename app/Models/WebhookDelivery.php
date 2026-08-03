@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\Enums\WebhookDeliveryStatus;
 use App\Enums\WebhookSource;
-use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
@@ -29,8 +29,6 @@ use Illuminate\Support\Carbon;
 #[Fillable(['source', 'body_sha256', 'headers', 'payload', 'received_at', 'processed_at', 'attempts', 'status', 'error'])]
 class WebhookDelivery extends Model
 {
-    use BelongsToTenant;
-
     /**
      * The table carries no created_at / updated_at pair.
      *
@@ -54,5 +52,16 @@ class WebhookDelivery extends Model
             'status' => WebhookDeliveryStatus::class,
             'error' => 'array',
         ];
+    }
+
+    /**
+     * Nullable by design: rows are created platform-level before any tenant
+     * context exists (docs/02 §3) — hence no BelongsToTenant trait.
+     *
+     * @return BelongsTo<Tenant, $this>
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 }

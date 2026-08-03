@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -48,6 +50,9 @@ use Illuminate\Support\Carbon;
 class Contact extends Model
 {
     use BelongsToTenant, HasUuids, SoftDeletes;
+
+    /** @use HasFactory<ContactFactory> */
+    use HasFactory;
 
     /**
      * The table carries no created_at / updated_at pair.

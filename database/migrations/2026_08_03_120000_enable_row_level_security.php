@@ -90,11 +90,11 @@ return new class extends Migration
     public function up(): void
     {
         foreach (self::TENANT_TABLES as $table) {
-            $this->enableRls($table, "tenant_id = current_setting('app.tenant_id', true)::uuid");
+            $this->enableRls($table, "tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid");
         }
 
         foreach (self::NULLABLE_TENANT_TABLES as $table) {
-            $this->enableRls($table, "tenant_id IS NULL OR tenant_id = current_setting('app.tenant_id', true)::uuid");
+            $this->enableRls($table, "tenant_id IS NULL OR tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid");
         }
 
         // Deliberate exception: tenant_user carries tenant_id but gets NO RLS

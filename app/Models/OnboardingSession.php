@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['nonce', 'feature_type', 'es_version', 'events', 'waba_id', 'phone_number_id', 'code_exchanged_at', 'history_sync_requested_at', 'history_sync_completed_at', 'contacts_sync_requested_at', 'status', 'failure'])]
 class OnboardingSession extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.
@@ -52,5 +52,16 @@ class OnboardingSession extends Model
             'contacts_sync_requested_at' => 'datetime',
             'failure' => 'array',
         ];
+    }
+
+    /**
+     * Nullable by design: rows are created platform-level before any tenant
+     * context exists (docs/02 §3) — hence no BelongsToTenant trait.
+     *
+     * @return BelongsTo<Tenant, $this>
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 }

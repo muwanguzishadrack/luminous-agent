@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\CtwaReferralFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -37,6 +39,9 @@ use Illuminate\Support\Carbon;
 class CtwaReferral extends Model
 {
     use BelongsToTenant, HasUuids;
+
+    /** @use HasFactory<CtwaReferralFactory> */
+    use HasFactory;
 
     /**
      * The table carries no created_at / updated_at pair.

@@ -1,0 +1,35 @@
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "102290129340398",
+            "changes": [
+                {
+                    "field": "messages",
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "256312345678",
+                            "phone_number_id": "106540352242922"
+                        },
+                        "contacts": [
+                            {
+                                "profile": { "name": "Grace N." },
+                                "wa_id": "256701234567"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "256701234567",
+                                "id": "wamid.HBgMMjU2NzAxMjM0NTY3FQIAEhggNzg5QUJDREVGMDEyMzQ1Njc4OTo=",
+                                "timestamp": "1754236800",
+                                "type": "text",
+                                "text": { "body": "Hello, do you have shea butter in stock?" }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\CannedReplyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -22,6 +24,9 @@ use Illuminate\Database\Eloquent\Model;
 class CannedReply extends Model
 {
     use BelongsToTenant, HasUuids;
+
+    /** @use HasFactory<CannedReplyFactory> */
+    use HasFactory;
 
     /**
      * The table carries no created_at / updated_at pair.
