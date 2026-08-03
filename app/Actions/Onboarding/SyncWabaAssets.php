@@ -25,7 +25,7 @@ class SyncWabaAssets extends OnboardingStep
         return OnboardingStatus::SYNCING;
     }
 
-    public function handle(OnboardingSession $session, ?string $code = null): void
+    public function handle(OnboardingSession $session, OnboardingInput $input): void
     {
         $this->assertFinishPayload($session);
 

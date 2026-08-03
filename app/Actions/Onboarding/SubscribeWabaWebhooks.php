@@ -22,7 +22,7 @@ class SubscribeWabaWebhooks extends OnboardingStep
         return OnboardingStatus::REGISTERED;
     }
 
-    public function handle(OnboardingSession $session, ?string $code = null): void
+    public function handle(OnboardingSession $session, OnboardingInput $input): void
     {
         $this->assertFinishPayload($session);
 

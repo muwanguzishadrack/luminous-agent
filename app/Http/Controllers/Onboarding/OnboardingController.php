@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Onboarding;
 
+use App\Actions\Onboarding\OnboardingInput;
 use App\Actions\Onboarding\OnboardingStatus;
 use App\Actions\Onboarding\RunOnboardingChain;
 use App\Enums\ActorType;
@@ -99,7 +100,10 @@ class OnboardingController extends Controller
 
         $session->save();
 
-        return $this->state($chain->handle($session, (string) $request->validated('code')));
+        return $this->state($chain->handle($session, new OnboardingInput(
+            code: (string) $request->validated('code'),
+            pin: $request->validated('pin'),
+        )));
     }
 
     /**
@@ -108,14 +112,18 @@ class OnboardingController extends Controller
      * binding: SubstituteBindings runs before EstablishTenancyContext has
      * set the RLS session variable.
      */
-    public function resume(string $session, RunOnboardingChain $chain): JsonResponse
+    public function resume(Request $request, string $session, RunOnboardingChain $chain): JsonResponse
     {
         $session = OnboardingSession::query()
             ->whereKey($session)
             ->where('tenant_id', Tenancy::currentIdOrFail())
             ->firstOrFail();
 
-        return $this->state($chain->handle($session));
+        // A number that already has two-step verification requires ITS pin on
+        // register (133005); the client supplies it here on retry.
+        $pin = $request->validate(['pin' => ['nullable', 'digits:6']])['pin'] ?? null;
+
+        return $this->state($chain->handle($session, new OnboardingInput(pin: $pin)));
     }
 
     private function sessionByNonce(string $nonce): OnboardingSession

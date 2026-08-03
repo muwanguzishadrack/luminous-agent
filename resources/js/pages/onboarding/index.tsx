@@ -4,6 +4,7 @@ import {
     Circle,
     CircleAlert,
     MessagesSquare,
+    KeyRound,
     RotateCcw,
     Smartphone,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { dashboard } from '@/routes';
 import { index as numbersIndex } from '@/routes/numbers';
@@ -480,7 +482,15 @@ export default function OnboardingIndex({
         }
     };
 
-    const resumeChain = async () => {
+    // 133005 = PIN mismatch, 133008/133009 = too many/too fast PIN guesses.
+    // All three mean: we need the number's real two-step-verification PIN.
+    const failureCode = Number(
+        (flow?.failure?.error as { code?: number } | undefined)?.code ?? 0,
+    );
+    const needsPin = [133005, 133008, 133009].includes(failureCode);
+    const [pin, setPin] = useState('');
+
+    const resumeChain = async (suppliedPin?: string) => {
         if (!flow || resuming || exchanging) {
             return;
         }
@@ -491,7 +501,7 @@ export default function OnboardingIndex({
         try {
             const state = await postJson<ChainState>(
                 onboardingResume.url(flow.id),
-                {},
+                suppliedPin ? { pin: suppliedPin } : {},
             );
 
             setFlow((previous) =>
@@ -701,6 +711,73 @@ export default function OnboardingIndex({
                                         ))}
                                     </ul>
 
+                                    {isFailed && needsPin && !busy && (
+                                        <Alert>
+                                            <KeyRound className="size-4" />
+                                            <AlertTitle>
+                                                This number already has two-step
+                                                verification
+                                            </AlertTitle>
+                                            <AlertDescription>
+                                                <p className="mb-2 text-sm">
+                                                    Meta needs the
+                                                    number&rsquo;s existing
+                                                    6-digit PIN to register it.
+                                                    If you don&rsquo;t know it,
+                                                    change it in WhatsApp
+                                                    Manager under the
+                                                    number&rsquo;s Settings
+                                                    &rsquo;Two-step
+                                                    verification&rsquo;, then
+                                                    enter the new PIN here.
+                                                </p>
+                                                <div className="flex items-center gap-2">
+                                                    <Input
+                                                        inputMode="numeric"
+                                                        autoComplete="one-time-code"
+                                                        maxLength={6}
+                                                        pattern="[0-9]{6}"
+                                                        placeholder="6-digit PIN"
+                                                        className="w-40"
+                                                        value={pin}
+                                                        onChange={(event) =>
+                                                            setPin(
+                                                                event.target.value
+                                                                    .replace(
+                                                                        /\D/g,
+                                                                        '',
+                                                                    )
+                                                                    .slice(
+                                                                        0,
+                                                                        6,
+                                                                    ),
+                                                            )
+                                                        }
+                                                    />
+                                                    <Button
+                                                        size="sm"
+                                                        disabled={
+                                                            resuming ||
+                                                            pin.length !== 6
+                                                        }
+                                                        onClick={() =>
+                                                            void resumeChain(
+                                                                pin,
+                                                            )
+                                                        }
+                                                    >
+                                                        {resuming ? (
+                                                            <Spinner />
+                                                        ) : (
+                                                            <RotateCcw className="size-4" />
+                                                        )}
+                                                        Register with this PIN
+                                                    </Button>
+                                                </div>
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+
                                     {isFailed && flow?.failure && !busy && (
                                         <Alert variant="destructive">
                                             <CircleAlert className="size-4" />
@@ -719,22 +796,24 @@ export default function OnboardingIndex({
                                                         2,
                                                     )}
                                                 </pre>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="mt-2"
-                                                    disabled={resuming}
-                                                    onClick={() =>
-                                                        void resumeChain()
-                                                    }
-                                                >
-                                                    {resuming ? (
-                                                        <Spinner />
-                                                    ) : (
-                                                        <RotateCcw className="size-4" />
-                                                    )}
-                                                    Resume from failed step
-                                                </Button>
+                                                {!needsPin && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="mt-2"
+                                                        disabled={resuming}
+                                                        onClick={() =>
+                                                            void resumeChain()
+                                                        }
+                                                    >
+                                                        {resuming ? (
+                                                            <Spinner />
+                                                        ) : (
+                                                            <RotateCcw className="size-4" />
+                                                        )}
+                                                        Resume from failed step
+                                                    </Button>
+                                                )}
                                             </AlertDescription>
                                         </Alert>
                                     )}

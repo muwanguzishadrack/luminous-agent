@@ -208,7 +208,10 @@ All of these belong in `config/limits.php` so they are testable and tunable in o
 | `131047` | Re-engagement required (outside CSW) | Block in UI before send; if it happens, prompt template selection |
 | `131026` | Message undeliverable (not on WhatsApp / cannot receive) | Mark contact `invalid`, suppress from future campaigns |
 | `131042` | Business eligibility / payment issue | Surface "add a payment method" banner; suspend sends |
+| `133005` | **Two-step verification PIN mismatch** — the number already has 2FA set | Register requires the number's **existing** PIN, not a generated one. Prompt the client for it; a generated PIN is only valid for a number without 2FA. Reset path: WhatsApp Manager → number → Settings → Two-step verification → Change PIN |
+| `133008` / `133009` | Too many PIN guesses / guessed too fast | Stop retrying; honour the wait in `error_data.details` |
 | `133010` | Number not registered | Prompt re-registration in onboarding |
+| `133016` | **Register/deregister rate limit** — 10 attempts per number per rolling 72h | Never auto-retry registration; each Resume click spends one attempt |
 | `190` | Token expired/invalid | Trip credential circuit breaker, prompt reconnect |
 | `368` | Temporarily blocked for policy violation | Halt all sends on that number, raise a `health_events` critical |
 | `80007` | Rate limit hit | Global backoff for the WABA |

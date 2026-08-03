@@ -29,7 +29,7 @@ class RunOnboardingChain
         CompleteOnboarding::class,
     ];
 
-    public function handle(OnboardingSession $session, ?string $code = null): OnboardingSession
+    public function handle(OnboardingSession $session, ?OnboardingInput $input = null): OnboardingSession
     {
         if ($session->status === OnboardingStatus::COMPLETE) {
             return $session;
@@ -45,6 +45,8 @@ class RunOnboardingChain
             ])->save();
         }
 
+        $input ??= new OnboardingInput;
+
         foreach (self::STEPS as $stepClass) {
             $step = app($stepClass);
 
@@ -53,7 +55,7 @@ class RunOnboardingChain
             }
 
             try {
-                $step->handle($session, $code);
+                $step->handle($session, $input);
             } catch (Throwable $e) {
                 $this->recordFailure($session, $step, $e);
 

@@ -20,10 +20,10 @@ abstract class OnboardingStep
     abstract public function runsAt(): string;
 
     /**
-     * Execute the step. $code is only meaningful to ExchangeSignupCode — it
-     * is the one-time ES code and is never persisted or logged.
+     * Execute the step. $input carries the per-run secrets (ES code, 2FA PIN);
+     * they are never persisted or logged.
      */
-    abstract public function handle(OnboardingSession $session, ?string $code = null): void;
+    abstract public function handle(OnboardingSession $session, OnboardingInput $input): void;
 
     public function shouldRun(OnboardingSession $session): bool
     {

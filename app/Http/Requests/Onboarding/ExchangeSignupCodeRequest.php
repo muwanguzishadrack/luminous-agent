@@ -26,6 +26,8 @@ class ExchangeSignupCodeRequest extends FormRequest
             'waba_id' => ['required', 'string', 'max:64'],
             'phone_number_id' => ['required', 'string', 'max:64'],
             'feature_type' => ['nullable', 'string', Rule::in([OnboardingStatus::COEXISTENCE_FEATURE])],
+            // Only supplied when the number already has two-step verification.
+            'pin' => ['nullable', 'digits:6'],
         ];
     }
 }

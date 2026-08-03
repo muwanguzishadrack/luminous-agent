@@ -25,7 +25,7 @@ class ExchangeSignupCode extends OnboardingStep
         return OnboardingStatus::FINISHED;
     }
 
-    public function handle(OnboardingSession $session, ?string $code = null): void
+    public function handle(OnboardingSession $session, OnboardingInput $input): void
     {
         if ($session->code_exchanged_at !== null) {
             // Already exchanged on an earlier attempt — the code is spent;
@@ -35,13 +35,13 @@ class ExchangeSignupCode extends OnboardingStep
             return;
         }
 
-        if ($code === null || $code === '') {
+        if ($input->code === null || $input->code === '') {
             throw new RuntimeException(
                 'An Embedded Signup code is required — re-submit the FINISH payload to /onboarding/exchange.',
             );
         }
 
-        $response = $this->client->exchangeCode($code);
+        $response = $this->client->exchangeCode($input->code);
 
         $token = (string) ($response['access_token'] ?? '');
 

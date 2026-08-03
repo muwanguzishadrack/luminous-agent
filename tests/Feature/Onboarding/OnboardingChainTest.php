@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\Onboarding\OnboardingInput;
+use App\Actions\Onboarding\OnboardingStatus;
 use App\Actions\Onboarding\RunOnboardingChain;
 use App\Enums\MetaCredentialType;
 use App\Models\MetaCredential;
@@ -361,4 +363,55 @@ test('resuming a mid-flow session re-runs only idempotent sync steps', function 
         ->and(PhoneNumber::query()->count())->toBe(1)
         ->and(Template::query()->count())->toBe(2)
         ->and(MetaCredential::query()->count())->toBe(1);
+});
+
+test('a number with existing two-step verification fails with 133005 and completes once the real PIN is supplied', function () {
+    $user = User::factory()->create();
+    $tenant = $user->currentTenant;
+    Tenancy::initialize($tenant);
+
+    MetaCredential::factory()->create(['waba_account_id' => null]);
+    $session = OnboardingSessionFactory::new()->exchanged()->create(['tenant_id' => $tenant->id]);
+
+    /** @var FakeGraphClient $graph */
+    $graph = app(GraphClient::class);
+    $graph->failWith(133005);
+
+    app(RunOnboardingChain::class)->handle($session);
+
+    $session->refresh();
+    expect($session->status)->toBe(OnboardingStatus::FAILED)
+        ->and($session->failure['step'])->toBe('register_phone_number')
+        ->and($session->failure['error']['code'])->toBe(133005);
+
+    // The client supplies the number's real PIN and resumes — the chain
+    // continues from the failed step and reaches completion.
+    primeGraphFixtures($graph, (string) $session->waba_id, (string) $session->phone_number_id);
+    app(RunOnboardingChain::class)->handle($session, new OnboardingInput(pin: '246813'));
+
+    $session->refresh();
+    expect($session->status)->toBe(OnboardingStatus::COMPLETE);
+
+    $register = collect($graph->calls)->where('path', "{$session->phone_number_id}/register")->last();
+    expect($register['payload']['pin'])->toBe('246813');
+});
+
+test('the supplied PIN is never persisted or written to the audit trail', function () {
+    $user = User::factory()->create();
+    $tenant = $user->currentTenant;
+    Tenancy::initialize($tenant);
+
+    MetaCredential::factory()->create(['waba_account_id' => null]);
+    $session = OnboardingSessionFactory::new()->exchanged()->create(['tenant_id' => $tenant->id]);
+
+    /** @var FakeGraphClient $graph */
+    $graph = app(GraphClient::class);
+    primeGraphFixtures($graph, (string) $session->waba_id, (string) $session->phone_number_id);
+
+    app(RunOnboardingChain::class)->handle($session, new OnboardingInput(pin: '135792'));
+
+    $audit = DB::table('audit_logs')->pluck('context')->implode(' ');
+    expect($audit)->not->toContain('135792')
+        ->and(json_encode($session->fresh()->toArray()))->not->toContain('135792')
+        ->and($audit)->toContain('client_supplied');
 });

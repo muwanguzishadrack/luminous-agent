@@ -25,7 +25,7 @@ class RegisterPhoneNumber extends OnboardingStep
         return OnboardingStatus::EXCHANGED;
     }
 
-    public function handle(OnboardingSession $session, ?string $code = null): void
+    public function handle(OnboardingSession $session, OnboardingInput $input): void
     {
         $this->assertFinishPayload($session);
 
@@ -40,7 +40,11 @@ class RegisterPhoneNumber extends OnboardingStep
             return;
         }
 
-        $pin = (string) random_int(100000, 999999);
+        // Meta requires the number's EXISTING two-step-verification PIN when
+        // one is already set; a generated PIN is only valid for a number
+        // without 2FA, and otherwise fails with 133005. The client supplies
+        // theirs through the UI on retry. Never persisted, never logged.
+        $pin = $input->pin ?? (string) random_int(100000, 999999);
 
         $this->credentials->businessClient()->post("{$session->phone_number_id}/register", [
             'messaging_product' => 'whatsapp',
@@ -60,6 +64,7 @@ class RegisterPhoneNumber extends OnboardingStep
         AuditLog::record('onboarding.phone_registered', subject: $session, context: [
             'phone_number_id' => $session->phone_number_id,
             'pin_set' => true, // the PIN value itself is never persisted or logged
+            'pin_source' => $input->pin !== null ? 'client_supplied' : 'generated',
         ]);
     }
 }

@@ -41,7 +41,7 @@ already know the business name, email, and website.
 | # | Action | Notes |
 |---|---|---|
 | 1 | `ExchangeSignupCode` | `POST /oauth/access_token` with `client_id`, `client_secret`, `code`. Store as `meta_credentials.type=business`. **Never log the code or token.** |
-| 2 | `RegisterPhoneNumber` | `POST /{phone_number_id}/register` with a generated 6-digit PIN. Persist `pin_set`. **Skip entirely for Coexistence numbers** — already registered. |
+| 2 | `RegisterPhoneNumber` | `POST /{phone_number_id}/register`. PIN rule: if the number **already has two-step verification**, Meta requires *that* PIN (else `133005`) — the client supplies it and we pass it through for one run only; otherwise we generate a 6-digit PIN. Persist `pin_set`. **Skip entirely for Coexistence numbers** — already registered. |
 | 3 | `SubscribeWabaWebhooks` | `POST /{waba_id}/subscribed_apps`; verify with a `GET` and assert our app id is present |
 | 4 | `SyncWabaAssets` | Fetch WABA + numbers; populate `waba_accounts`, `phone_numbers` incl. `quality_rating`, `messaging_limit_tier`, `throughput`, `platform_type`, `is_on_biz_app`. Also confirm template analytics (`POST /{waba_id}?is_enabled_for_insights=true` — one-time, irreversible; required before M8 can pull `template_analytics`) |
 | 5 | `SyncTemplates` | Initial template pull so M3 is populated on arrival |
@@ -188,6 +188,8 @@ Offboarding also needs a self-serve path: export everything, then disconnect.
 | Client abandons the ES window mid-flow | `onboarding_sessions` stays `started`; resumable from the last completed step |
 | `code` exchange fails | Show the real Meta error; allow retry without restarting ES |
 | Phone registration fails (`133010`) | Offer request-code/verify-code flow inline |
+| Number already has two-step verification (`133005`) | Meta requires the number's **existing** 6-digit PIN on register. The UI prompts for it and resumes with it; the PIN is used for that run only and is never persisted or logged. If the client cannot recall it, they change it in WhatsApp Manager and enter the new one. |
+| Repeated registration attempts (`133016`) | Registration is capped at **10 attempts per number per rolling 72 hours** — surface remaining attempts and never retry automatically |
 | Number already connected to another tenant of ours | Refuse with a clear message; do not silently move it |
 | Client revokes our app in Business Suite | `PARTNER_REMOVED` → suspend, prompt reconnect |
 | Same person onboards two businesses | Supported — user belongs to multiple tenants |
