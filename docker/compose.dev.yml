@@ -1,5 +1,37 @@
 name: luminous-dev
 
+# App-side background processes run in this stack too (D-019), so they start
+# with `docker compose up -d` like the infra does. They bind-mount the project
+# and therefore need service-network hostnames instead of the host's mapped
+# ports. Real environment variables beat .env values in Laravel (the dotenv
+# repository is immutable), so these overrides win inside the containers.
+x-worker: &worker
+  build:
+    context: ..
+    dockerfile: docker/worker/Dockerfile
+  restart: unless-stopped
+  working_dir: /app
+  volumes:
+    - ..:/app
+  environment:
+    DB_HOST: postgres
+    DB_PORT: 5432
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    MEILISEARCH_HOST: http://meilisearch:7700
+    AWS_ENDPOINT: http://minio:9000
+    MAIL_HOST: mailpit
+    MAIL_PORT: 1025
+    # Server-side broadcasting target; the browser still uses the mapped port
+    # from VITE_REVERB_* in .env.
+    REVERB_HOST: reverb
+    REVERB_PORT: 8080
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -60,6 +92,22 @@ services:
     image: axllent/mailpit
     restart: unless-stopped
     ports: ["58025:8025", "51025:1025"]
+
+  horizon:
+    <<: *worker
+    command: ["php", "artisan", "horizon"]
+    # Give in-flight jobs room to finish before the container is killed —
+    # a half-processed webhook delivery is the thing we never want.
+    stop_grace_period: 30s
+
+  scheduler:
+    <<: *worker
+    command: ["php", "artisan", "schedule:work"]
+
+  reverb:
+    <<: *worker
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports: ["58085:8080"]
 
 volumes:
   pgdata:

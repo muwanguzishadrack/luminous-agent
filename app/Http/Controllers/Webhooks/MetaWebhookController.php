@@ -19,9 +19,11 @@ class MetaWebhookController
      * GET verification handshake: echo hub.challenge when the verify token
      * matches (docs/reference/whatsapp-webhooks.md §1).
      */
-    public function verify(Request $request, string $app): Response
+    public function verify(Request $request, ?string $app = null): Response
     {
-        abort_unless($app === config('meta.app_id'), 404);
+        // Canonical URL is /webhooks/meta; an explicit app id segment is
+        // accepted but must match ours.
+        abort_unless($app === null || $app === config('meta.app_id'), 404);
 
         $verifyToken = (string) config('meta.webhook_verify_token');
 
@@ -39,9 +41,9 @@ class MetaWebhookController
     /**
      * POST delivery: signature over the RAW body, persist, ack < 50ms.
      */
-    public function ingest(Request $request, string $app): Response
+    public function ingest(Request $request, ?string $app = null): Response
     {
-        abort_unless($app === config('meta.app_id'), 404);
+        abort_unless($app === null || $app === config('meta.app_id'), 404);
 
         $raw = $request->getContent();
 

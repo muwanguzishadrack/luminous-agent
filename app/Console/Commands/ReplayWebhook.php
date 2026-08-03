@@ -32,7 +32,7 @@ class ReplayWebhook extends Command
         $signature = 'sha256='.hash_hmac('sha256', $raw, (string) config('meta.app_secret'));
 
         $request = Request::create(
-            uri: '/webhooks/meta/'.config('meta.app_id'),
+            uri: '/webhooks/meta',
             method: 'POST',
             server: [
                 'CONTENT_TYPE' => 'application/json',

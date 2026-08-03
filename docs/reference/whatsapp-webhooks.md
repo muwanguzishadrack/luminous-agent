@@ -17,7 +17,7 @@ Verified 2026-08-01. This is the complete list of fields we subscribe to and wha
 ### Verification (`GET`)
 
 ```
-GET /webhooks/meta/{app}?hub.mode=subscribe&hub.challenge=…&hub.verify_token=…
+GET /webhooks/meta?hub.mode=subscribe&hub.challenge=…&hub.verify_token=…
 → 200 with the raw hub.challenge value as the body
 ```
 

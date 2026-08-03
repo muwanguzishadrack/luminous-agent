@@ -12,5 +12,5 @@ use Illuminate\Support\Facades\Route;
 | re-encodes the raw body (signature verification depends on it).
 */
 
-Route::get('/webhooks/meta/{app}', [MetaWebhookController::class, 'verify']);
-Route::post('/webhooks/meta/{app}', [MetaWebhookController::class, 'ingest']);
+Route::get('/webhooks/meta/{app?}', [MetaWebhookController::class, 'verify']);
+Route::post('/webhooks/meta/{app?}', [MetaWebhookController::class, 'ingest']);

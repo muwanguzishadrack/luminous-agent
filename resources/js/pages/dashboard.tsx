@@ -1,15 +1,29 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+import { MessagesSquare } from 'lucide-react';
 import { useState } from 'react';
 import PendingInvitationsModal from '@/components/pending-invitations-modal';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { dashboard } from '@/routes';
+import { index as onboardingIndex } from '@/routes/onboarding';
 import type { DashboardInvitation } from '@/types';
 
 type Props = {
     pendingInvitations?: DashboardInvitation[];
+    hasWhatsAppNumbers?: boolean;
 };
 
-export default function Dashboard({ pendingInvitations = [] }: Props) {
+export default function Dashboard({
+    pendingInvitations = [],
+    hasWhatsAppNumbers = true,
+}: Props) {
     const [showInvitations, setShowInvitations] = useState(
         pendingInvitations.length > 0,
     );
@@ -23,6 +37,28 @@ export default function Dashboard({ pendingInvitations = [] }: Props) {
                 onOpenChange={setShowInvitations}
             />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+                {!hasWhatsAppNumbers && (
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <MessagesSquare className="size-5 text-muted-foreground" />
+                                <CardTitle>Connect WhatsApp</CardTitle>
+                            </div>
+                            <CardDescription>
+                                No number is connected to this workspace yet.
+                                Link a WhatsApp Business number to start
+                                receiving and sending messages.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button asChild>
+                                <Link href={onboardingIndex()}>
+                                    Connect WhatsApp
+                                </Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
                 <div className="grid auto-rows-min gap-4 md:grid-cols-3">
                     <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                         <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />

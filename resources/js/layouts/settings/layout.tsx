@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
+import { index as numbers } from '@/routes/numbers';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { index as tenants } from '@/routes/tenants';
@@ -25,6 +26,11 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Tenants',
         href: tenants(),
+        icon: null,
+    },
+    {
+        title: 'Numbers',
+        href: numbers(),
         icon: null,
     },
     {

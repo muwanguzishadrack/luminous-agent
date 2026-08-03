@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Queue;
 function signedPost(string $body): array
 {
     return [
-        'uri' => '/webhooks/meta/'.config('meta.app_id'),
+        'uri' => '/webhooks/meta',
         'body' => $body,
         'headers' => [
             'Content-Type' => 'application/json',
@@ -38,20 +38,29 @@ beforeEach(function () {
 });
 
 test('the GET handshake echoes hub.challenge for a valid verify token', function () {
-    $this->get('/webhooks/meta/'.config('meta.app_id').'?hub_mode=subscribe&hub_challenge=12345&hub_verify_token=test-verify-token')
+    $this->get('/webhooks/meta?hub_mode=subscribe&hub_challenge=12345&hub_verify_token=test-verify-token')
         ->assertOk()
         ->assertSee('12345');
 });
 
+test('the id-suffixed URL form still works, and a foreign app id is a 404', function () {
+    $this->get('/webhooks/meta/'.config('meta.app_id').'?hub_mode=subscribe&hub_challenge=99&hub_verify_token=test-verify-token')
+        ->assertOk()
+        ->assertSee('99');
+
+    $this->get('/webhooks/meta/000000000000000?hub_mode=subscribe&hub_challenge=99&hub_verify_token=test-verify-token')
+        ->assertNotFound();
+});
+
 test('the GET handshake rejects a wrong verify token', function () {
-    $this->get('/webhooks/meta/'.config('meta.app_id').'?hub_mode=subscribe&hub_challenge=12345&hub_verify_token=wrong')
+    $this->get('/webhooks/meta?hub_mode=subscribe&hub_challenge=12345&hub_verify_token=wrong')
         ->assertForbidden();
 });
 
 test('it rejects a bad signature and persists nothing', function () {
     $body = metaFixture('messages/text_inbound.json');
 
-    $this->call('POST', '/webhooks/meta/'.config('meta.app_id'), [], [], [], [
+    $this->call('POST', '/webhooks/meta', [], [], [], [
         'CONTENT_TYPE' => 'application/json',
         'HTTP_X_HUB_SIGNATURE_256' => 'sha256='.hash_hmac('sha256', $body, 'wrong-secret'),
     ], $body)->assertUnauthorized();

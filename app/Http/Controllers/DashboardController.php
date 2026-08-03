@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PhoneNumber;
 use App\Models\TenantInvitation;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,6 +34,9 @@ class DashboardController extends Controller
 
         return Inertia::render('dashboard', [
             'pendingInvitations' => $pendingInvitations,
+            // Tenant-scoped automatically; drives the Connect WhatsApp
+            // callout until the first number lands (docs/m0 §7).
+            'hasWhatsAppNumbers' => PhoneNumber::query()->exists(),
         ]);
     }
 }

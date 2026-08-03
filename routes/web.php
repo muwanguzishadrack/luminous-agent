@@ -9,8 +9,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GrowthController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\Onboarding\OnboardingController;
+use App\Http\Controllers\Onboarding\OnboardingPageController;
 use App\Http\Controllers\SegmentController;
 use App\Http\Controllers\SequenceController;
+use App\Http\Controllers\Settings\NumbersController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\Tenants\TenantInvitationController;
 use App\Http\Middleware\EnsureTenantMembership;
@@ -38,7 +40,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('invitations/{invitation}/accept', [TenantInvitationController::class, 'accept'])->name('invitations.accept');
     Route::delete('invitations/{invitation}', [TenantInvitationController::class, 'decline'])->name('invitations.decline');
 
-    // Embedded Signup v4 server chain (docs/modules/m0-onboarding.md §1).
+    // Embedded Signup v4 (docs/modules/m0-onboarding.md §1, §7): the
+    // launcher page, the tenant's numbers, and the server chain endpoints.
+    Route::get('onboarding', OnboardingPageController::class)->name('onboarding.index');
+    Route::get('settings/numbers', NumbersController::class)->name('numbers.index');
+
     Route::post('onboarding/start', [OnboardingController::class, 'start'])->name('onboarding.start');
     Route::post('onboarding/events', [OnboardingController::class, 'events'])->name('onboarding.events');
     Route::post('onboarding/exchange', [OnboardingController::class, 'exchange'])->name('onboarding.exchange');

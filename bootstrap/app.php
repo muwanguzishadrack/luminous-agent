@@ -23,6 +23,13 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind the Cloudflare tunnel: trust forwarded headers so generated
+        // URLs use the public HTTPS hostname (docs/03 §3).
+        $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_HOST
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO);
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [

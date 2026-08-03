@@ -42,7 +42,7 @@ group (no session, no CSRF).
 
 | Surface | Route | Who calls it | Auth |
 |---|---|---|---|
-| WhatsApp webhooks | `GET|POST /webhooks/meta/{app}` | Meta | `X-Hub-Signature-256` HMAC-SHA256 with app secret; `hub.verify_token` on GET |
+| WhatsApp webhooks | `GET|POST /webhooks/meta[/{app}]` — canonical URL is `/webhooks/meta`; the optional app-id segment must match ours | Meta | `X-Hub-Signature-256` HMAC-SHA256 with app secret; `hub.verify_token` on GET |
 | ioTec Pay callbacks | `POST /webhooks/iotec/{kind}` | ioTec | Static security header configured per-wallet in the ioTec portal, **plus** mandatory re-fetch of transaction status before trusting |
 | MBA connectors | `GET|POST /connectors/v1/{tenant}/...` | Meta Business Agent | Per-tenant bearer token, rotatable, scoped to read-only or write tools |
 | Embedded Signup callback | `POST /onboarding/exchange` | Our own browser JS | Session + signed nonce (this one IS in the `web` group) |
@@ -87,7 +87,7 @@ This is the most important piece of the system. Detailed spec in
 [modules/m1-team-inbox.md](modules/m1-team-inbox.md); the shape is:
 
 ```
-POST /webhooks/meta/{app}
+POST /webhooks/meta
   1. Verify X-Hub-Signature-256 against raw body        → 401 on mismatch
   2. INSERT INTO webhook_deliveries (raw payload, sha256 of body)
        - unique index on (source, body_sha256) → duplicate delivery is a no-op
