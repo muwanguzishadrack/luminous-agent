@@ -14,13 +14,14 @@ use Illuminate\Http\Request;
  */
 class ReplayWebhook extends Command
 {
-    protected $signature = 'webhook:replay {fixture : Path to a JSON fixture, relative to the project root}';
+    protected $signature = 'webhook:replay {fixture : Path to a JSON fixture, absolute or relative to the project root}';
 
     protected $description = 'POST a fixture through the Meta webhook route with a valid signature';
 
     public function handle(): int
     {
-        $path = base_path($this->argument('fixture'));
+        $fixture = (string) $this->argument('fixture');
+        $path = str_starts_with($fixture, '/') ? $fixture : base_path($fixture);
 
         if (! is_file($path)) {
             $this->error("Fixture not found: {$path}");

@@ -128,8 +128,10 @@ class ProcessWebhookDelivery implements ShouldQueue
      */
     private function resolveTenant(array $entry, array $value): ?Tenant
     {
+        // Explicit ::text casts: without them Postgres sees `unknown` argument
+        // types and cannot resolve the overload.
         $tenantId = DB::selectOne(
-            'select resolve_webhook_tenant(?, ?) as tenant_id',
+            'select resolve_webhook_tenant(?::text, ?::text) as tenant_id',
             [
                 $value['metadata']['phone_number_id'] ?? null,
                 $entry['id'] ?? null,
