@@ -19,6 +19,8 @@ const QUALITY_STYLES: Record<string, string> = {
     YELLOW: 'border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-400',
     RED: 'border-transparent bg-red-500/15 text-red-700 dark:text-red-400',
     NA: 'border-transparent bg-muted text-muted-foreground',
+    // New numbers come back UNKNOWN until Meta has enough delivery data.
+    UNKNOWN: 'border-transparent bg-muted text-muted-foreground',
 };
 
 /**
@@ -44,6 +46,11 @@ const NAME_STATUS_LABELS: Record<string, string> = {
     DECLINED: 'Declined',
     EXPIRED: 'Expired',
     NONE: 'Not set',
+};
+
+const QUALITY_LABELS: Record<string, string> = {
+    NA: 'Not available',
+    UNKNOWN: 'Not yet rated',
 };
 
 function formatTier(tier: string): string {
@@ -179,9 +186,8 @@ export default function WhatsAppConnectionPanel({
                         className={cn(QUALITY_STYLES[number.qualityRating])}
                         data-test="whatsapp-quality-rating"
                     >
-                        {number.qualityRating === 'NA'
-                            ? 'Not available'
-                            : formatEnum(number.qualityRating)}
+                        {QUALITY_LABELS[number.qualityRating] ??
+                            formatEnum(number.qualityRating)}
                     </Badge>
                 </Field>
 
@@ -216,8 +222,13 @@ export default function WhatsAppConnectionPanel({
                     <span className="font-mono text-xs">{account.wabaId}</span>
                 </Field>
 
-                <Field label="Messaging tier">
-                    {formatTier(number.messagingLimitTier)}
+                {/* Portfolio-level, not per-number: messaging_limit_tier
+                    was deprecated by Meta on 2026-05-21 and returns nothing
+                    on v24.0+. */}
+                <Field label="Messaging limit">
+                    {account.portfolioMessagingLimit === null
+                        ? 'Not yet assigned'
+                        : formatTier(account.portfolioMessagingLimit)}
                 </Field>
 
                 <Field label="Account status">

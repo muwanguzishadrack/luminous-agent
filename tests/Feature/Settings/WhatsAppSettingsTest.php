@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\WhatsApp\RefreshWhatsAppConnection;
 use App\Enums\MetaCredentialType;
 use App\Enums\TeamRole;
 use App\Enums\WhatsAppVertical;
@@ -103,7 +104,6 @@ test('the connected panel exposes every field the screen renders', function () {
             ->where('wabaAccount.wabaId', $account->waba_id)
             ->where('wabaAccount.accountReviewStatus', $account->review_status)
             ->where('phoneNumber.qualityRating', 'GREEN')
-            ->where('phoneNumber.messagingLimitTier', 'TIER_1K')
             ->where('phoneNumber.throughputLevel', 'STANDARD')
             ->where('phoneNumber.platformType', 'CLOUD_API')
             ->where('phoneNumber.isOnBizApp', false)
@@ -144,7 +144,6 @@ test('refresh re-reads the number and the waba from graph and persists them', fu
         'quality_rating' => 'YELLOW',
         'code_verification_status' => 'UNVERIFIED',
         'name_status' => 'PENDING_REVIEW',
-        'messaging_limit_tier' => 'TIER_10K',
         'throughput' => ['level' => 'HIGH'],
         'platform_type' => 'CLOUD_API',
         'is_on_biz_app' => false,
@@ -153,6 +152,7 @@ test('refresh re-reads the number and the waba from graph and persists them', fu
         'name' => 'Acme Holdings',
         'account_review_status' => 'REJECTED',
         'business_verification_status' => 'verified',
+        'whatsapp_business_manager_messaging_limit' => 'TIER_10K',
     ]);
     fakeProfileRead($fake, $number);
 
@@ -168,12 +168,60 @@ test('refresh re-reads the number and the waba from graph and persists them', fu
         ->and($number->quality_rating)->toBe('YELLOW')
         ->and($number->code_verification_status)->toBe('UNVERIFIED')
         ->and($number->name_status)->toBe('PENDING_REVIEW')
-        ->and($number->messaging_limit_tier)->toBe('TIER_10K')
         ->and($number->throughput_level)->toBe('HIGH')
         ->and($number->last_synced_at)->not->toBeNull()
         ->and($account->name)->toBe('Acme Holdings')
         ->and($account->review_status)->toBe('REJECTED')
+        ->and($account->portfolio_messaging_limit)->toBe('TIER_10K')
         ->and(DB::table('audit_logs')->where('action', 'whatsapp.connection_refreshed')->count())->toBe(1);
+});
+
+/**
+ * Meta deprecated the per-number `messaging_limit_tier` on 2026-05-21; it
+ * returns nothing on v24.0+ and we pin v26.0. Asking for it produced an empty
+ * response that a hardcoded 'TIER_250' default then papered over, so the page
+ * confidently displayed 250 for a portfolio actually on TIER_2K.
+ *
+ * The limit belongs to the business portfolio and is read from the WABA node.
+ */
+test('the messaging limit comes from the portfolio, never the deprecated per-number field', function () {
+    expect(RefreshWhatsAppConnection::NUMBER_FIELDS)->not->toContain('messaging_limit_tier')
+        ->and(RefreshWhatsAppConnection::WABA_FIELDS)->toContain('whatsapp_business_manager_messaging_limit');
+
+    ['user' => $user, 'account' => $account, 'number' => $number] = connectedTeam();
+
+    $fake = fakeGraph();
+    $fake->fake("GET {$number->phone_number_id}", ['quality_rating' => 'UNKNOWN']);
+    $fake->fake("GET {$account->waba_id}", [
+        'whatsapp_business_manager_messaging_limit' => 'TIER_2K',
+    ]);
+    fakeProfileRead($fake, $number);
+
+    $this->actingAs($user)->post(route('whatsapp.refresh'));
+
+    $this->actingAs($user)
+        ->get(route('whatsapp.show'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('wabaAccount.portfolioMessagingLimit', 'TIER_2K')
+            // An unrated number reports UNKNOWN — the panel must carry it
+            // rather than fall through to an unstyled raw value.
+            ->where('phoneNumber.qualityRating', 'UNKNOWN')
+            ->missing('phoneNumber.messagingLimitTier'));
+});
+
+/**
+ * Nothing may invent a limit. A portfolio Meta has not rated yet reads as
+ * null, and the panel says "Not yet assigned" rather than guessing a tier.
+ */
+test('an unassigned messaging limit stays null', function () {
+    ['user' => $user] = connectedTeam();
+
+    Teams::initialize($user->team);
+    WabaAccount::query()->first()?->forceFill(['portfolio_messaging_limit' => null])->save();
+
+    $this->actingAs($user)
+        ->get(route('whatsapp.show'))
+        ->assertInertia(fn (Assert $page) => $page->where('wabaAccount.portfolioMessagingLimit', null));
 });
 
 test('a graph failure on refresh renders meta\'s own message instead of a 500', function () {

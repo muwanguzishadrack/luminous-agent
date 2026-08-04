@@ -157,7 +157,7 @@ All reports are exportable (CSV) and schedulable (email digest).
 |---|---|---|
 | `phone_number_quality_update` → YELLOW | warning | Notify; show on dashboard |
 | `phone_number_quality_update` → RED | **critical** | Auto-pause running campaigns (M4); notify owner |
-| Messaging tier change | info/warning | Update `phone_numbers.messaging_limit_tier`; recompute campaign ETAs |
+| Messaging tier change | info/warning | Update `waba_accounts.portfolio_messaging_limit`; recompute campaign ETAs. The limit is portfolio-level — the per-number `messaging_limit_tier` was deprecated 2026-05-21 |
 | `business_capability_update` | info | Update limits |
 | `account_review_update` | varies | Surface decision |
 | `account_alerts` | varies | Surface verbatim |

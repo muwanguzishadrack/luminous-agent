@@ -77,7 +77,6 @@ test('the exchange drives a session from started to complete, leaking no secrets
     expect($phone->phone_number_id)->toBe($phoneNumberId)
         ->and($phone->verified_name)->toBe('Acme Stores')
         ->and($phone->quality_rating)->toBe('GREEN')
-        ->and($phone->messaging_limit_tier)->toBe('TIER_1K')
         ->and($phone->throughput_level)->toBe('STANDARD')
         ->and($phone->platform_type)->toBe('CLOUD_API')
         ->and($phone->is_on_biz_app)->toBeFalse()

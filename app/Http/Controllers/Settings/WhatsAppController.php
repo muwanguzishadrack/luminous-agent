@@ -48,13 +48,14 @@ class WhatsAppController extends Controller
                 // account_review_status, rendered as "Account status".
                 'accountReviewStatus' => $wabaAccount->review_status,
                 'businessVerificationStatus' => $wabaAccount->business_verification_status,
+                // Portfolio-level, from whatsapp_business_manager_messaging_limit.
+                'portfolioMessagingLimit' => $wabaAccount->portfolio_messaging_limit,
             ],
             'phoneNumber' => $number === null ? null : [
                 'id' => $number->id,
                 'displayPhoneNumber' => $number->display_phone_number,
                 'verifiedName' => $number->verified_name,
                 'qualityRating' => $number->quality_rating,
-                'messagingLimitTier' => $number->messaging_limit_tier,
                 'throughputLevel' => $number->throughput_level,
                 'platformType' => $number->platform_type,
                 'isOnBizApp' => $number->is_on_biz_app,

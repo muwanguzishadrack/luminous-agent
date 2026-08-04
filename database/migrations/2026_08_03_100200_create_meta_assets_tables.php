@@ -43,7 +43,6 @@ return new class extends Migration
             $table->string('verified_name');
             $table->string('code_verification_status');
             $table->string('quality_rating'); // enum: GREEN|YELLOW|RED|UNKNOWN (app-level)
-            $table->string('messaging_limit_tier'); // legacy per-number field as Meta returns it
             $table->string('throughput_level'); // STANDARD, HIGH, ...
             $table->string('platform_type'); // CLOUD_API, ...
             $table->boolean('is_on_biz_app')->default(false); // true = Coexistence number

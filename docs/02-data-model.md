@@ -99,7 +99,7 @@ Every action taken during the session is written to `audit_logs` with `actor_typ
 | review_status | varchar | from `account_review_update` |
 | account_status | varchar | from `account_update` |
 | business_verification_status | varchar | |
-| portfolio_messaging_limit | varchar null | `2000`, `10000`, `100000`, `UNLIMITED` — from `whatsapp_business_manager_messaging_limit` / `business_capability_update` |
+| portfolio_messaging_limit | varchar null | `TIER_250`, `TIER_2K`, `TIER_10K`, `TIER_100K`, `TIER_UNLIMITED` — from `whatsapp_business_manager_messaging_limit` / `business_capability_update`. Null until Meta assigns one; never default it |
 | is_subscribed | boolean | our app subscribed to this WABA's webhooks |
 | payment_ready | boolean | client has attached a payment method |
 | onboarded_at / offboarded_at | timestamptz null | |
@@ -118,7 +118,6 @@ already holds a WABA is refused, not merged.
 | code_verification_status | varchar | `VERIFIED` or `UNVERIFIED` **only** — two-step verification state |
 | name_status | varchar | display-name review state: `APPROVED`, `AVAILABLE_WITHOUT_REVIEW`, `DECLINED`, `EXPIRED`, `PENDING_REVIEW`, `NONE`. **A different field from `code_verification_status`** — see `reference/whatsapp-cloud-api.md` §5 |
 | quality_rating | enum | `GREEN`, `YELLOW`, `RED`, `UNKNOWN` |
-| messaging_limit_tier | varchar | legacy per-number field as Meta returns it. The authoritative limit is portfolio-based since late 2025 — see `portfolio_messaging_limit` on `waba_accounts` below and `reference/pricing-and-limits.md` §3 |
 | throughput_level | varchar | `STANDARD`, `HIGH`, … |
 | platform_type | varchar | `CLOUD_API`, … |
 | is_on_biz_app | boolean | **true = Coexistence number** |

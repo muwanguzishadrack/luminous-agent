@@ -156,14 +156,14 @@ Graph `v26.0` via the Meta Developer Tools MCP. They are what `/settings/whatsap
 |---|---|
 | `display_phone_number` | as Meta formats it, e.g. `+256 762 850388` |
 | `verified_name` | string |
-| `quality_rating` | `GREEN` \| `YELLOW` \| `RED` \| `NA` |
+| `quality_rating` | `GREEN` \| `YELLOW` \| `RED` \| `NA` \| `UNKNOWN` (a number Meta has not rated yet — what a freshly connected number returns) |
 | `code_verification_status` | **`VERIFIED` \| `UNVERIFIED` only** — two-step verification state |
 | `name_status` | `APPROVED` \| `AVAILABLE_WITHOUT_REVIEW` \| `DECLINED` \| `EXPIRED` \| `PENDING_REVIEW` \| `NONE` — display-name review state |
 | `status` | `CONNECTED`, … |
 | `throughput{level}` | `STANDARD` (80 mps) \| `HIGH` (1,000 mps) \| `NOT_APPLICABLE` |
 | `platform_type` | `CLOUD_API` \| `ON_PREMISE` \| `NOT_APPLICABLE` |
 | `is_on_biz_app` | bool — **true = Coexistence** |
-| `messaging_limit_tier` | `TIER_50` \| `TIER_250` \| `TIER_1K` \| `TIER_10K` \| `TIER_100K` \| `TIER_UNLIMITED` — legacy, see §7 |
+| ~~`messaging_limit_tier`~~ | **Deprecated 2026-05-21.** Returns nothing on v24.0+, and we pin v26.0. Request `whatsapp_business_manager_messaging_limit` instead — it is a **business portfolio** limit, readable on the portfolio, the WABA, or a number within it. Values `TIER_50` \| `TIER_250` \| `TIER_1K` \| `TIER_2K` \| `TIER_10K` \| `TIER_100K` \| `TIER_UNLIMITED`. Asking for the old field returns an empty response, so any local default silently becomes fiction |
 | `webhook_configuration` | per-number override |
 
 > **`code_verification_status` and `name_status` are different fields and must never be conflated.**

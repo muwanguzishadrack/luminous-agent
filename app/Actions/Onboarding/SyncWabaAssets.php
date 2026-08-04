@@ -38,7 +38,7 @@ class SyncWabaAssets extends OnboardingStep
         $wabaId = (string) $session->waba_id;
 
         $waba = $client->get($wabaId, [
-            'fields' => 'name,currency,timezone_id,account_review_status,business_verification_status,owner_business_info',
+            'fields' => 'name,currency,timezone_id,account_review_status,business_verification_status,owner_business_info,whatsapp_business_manager_messaging_limit',
         ]);
 
         $account = WabaAccount::query()->first();
@@ -62,6 +62,12 @@ class SyncWabaAssets extends OnboardingStep
             'review_status' => (string) ($waba['account_review_status'] ?? 'PENDING'),
             'account_status' => 'ACTIVE',
             'business_verification_status' => (string) ($waba['business_verification_status'] ?? 'unknown'),
+            // The messaging limit is a property of the business portfolio, not
+            // the number. Its per-number predecessor, messaging_limit_tier, was
+            // deprecated by Meta on 2026-05-21 and returns nothing on v24.0+.
+            'portfolio_messaging_limit' => isset($waba['whatsapp_business_manager_messaging_limit'])
+                ? (string) $waba['whatsapp_business_manager_messaging_limit']
+                : null,
             'is_subscribed' => true, // step 3 verified it
         ];
 
@@ -95,7 +101,7 @@ class SyncWabaAssets extends OnboardingStep
         }
 
         $numbers = $client->get("{$wabaId}/phone_numbers", [
-            'fields' => 'id,verified_name,display_phone_number,quality_rating,messaging_limit_tier,throughput,platform_type,is_on_biz_app,code_verification_status',
+            'fields' => 'id,verified_name,display_phone_number,quality_rating,throughput,platform_type,is_on_biz_app,code_verification_status,name_status',
         ]);
 
         $onboarded = (string) $session->phone_number_id;
@@ -159,9 +165,11 @@ class SyncWabaAssets extends OnboardingStep
             'waba_account_id' => $account->id,
             'display_phone_number' => (string) ($number['display_phone_number'] ?? ''),
             'verified_name' => (string) ($number['verified_name'] ?? ''),
-            'code_verification_status' => (string) ($number['code_verification_status'] ?? 'NOT_VERIFIED'),
+            // UNVERIFIED, not NOT_VERIFIED: Meta returns exactly two values
+            // for this field and inventing a third would leak into the UI.
+            'code_verification_status' => (string) ($number['code_verification_status'] ?? 'UNVERIFIED'),
             'quality_rating' => (string) ($number['quality_rating'] ?? 'UNKNOWN'),
-            'messaging_limit_tier' => (string) ($number['messaging_limit_tier'] ?? 'TIER_250'),
+            'name_status' => (string) ($number['name_status'] ?? 'NONE'),
             'throughput_level' => (string) ($throughput['level'] ?? 'STANDARD'),
             'platform_type' => (string) ($number['platform_type'] ?? 'CLOUD_API'),
             'is_on_biz_app' => (bool) ($number['is_on_biz_app'] ?? false),

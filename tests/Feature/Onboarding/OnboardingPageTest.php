@@ -139,7 +139,6 @@ test('settings whatsapp shows the team single waba and number', function () {
             ->where('phoneNumber.displayPhoneNumber', '+256 700 000 001')
             ->where('phoneNumber.verifiedName', 'Acme Stores')
             ->where('phoneNumber.qualityRating', 'YELLOW')
-            ->where('phoneNumber.messagingLimitTier', 'TIER_1K')
             ->where('phoneNumber.throughputLevel', 'STANDARD')
             ->where('phoneNumber.isOnBizApp', true)
             ->where('phoneNumber.pinSet', false));

@@ -5,7 +5,13 @@
  * (display-name review) are separate fields and are never rendered under one
  * another's label.
  */
-export type WhatsAppQualityRating = 'GREEN' | 'YELLOW' | 'RED' | 'NA';
+export type WhatsAppQualityRating =
+    | 'GREEN'
+    | 'YELLOW'
+    | 'RED'
+    | 'NA'
+    // A number Meta has not rated yet — new numbers come back UNKNOWN.
+    | 'UNKNOWN';
 
 export type WhatsAppNameStatus =
     | 'APPROVED'
@@ -22,7 +28,6 @@ export type WhatsAppPhoneNumber = {
     displayPhoneNumber: string;
     verifiedName: string;
     qualityRating: WhatsAppQualityRating | string;
-    messagingLimitTier: string;
     throughputLevel: string;
     platformType: string;
     isOnBizApp: boolean;
@@ -40,6 +45,13 @@ export type WhatsAppAccount = {
     paymentReady: boolean;
     accountReviewStatus: string;
     businessVerificationStatus: string;
+    /**
+     * The business portfolio's messaging limit, from
+     * `whatsapp_business_manager_messaging_limit`. Null until Meta assigns
+     * one. The per-number `messaging_limit_tier` it replaced was deprecated
+     * on 2026-05-21 and returns nothing on v24.0+.
+     */
+    portfolioMessagingLimit: string | null;
 };
 
 export type WhatsAppBusinessProfile = {

@@ -22,9 +22,14 @@ class RefreshWhatsAppConnection
      * and `name_status` are both requested because they are distinct fields:
      * two-step verification state and display-name review state.
      */
-    public const NUMBER_FIELDS = 'display_phone_number,verified_name,quality_rating,code_verification_status,name_status,throughput,platform_type,is_on_biz_app,messaging_limit_tier';
+    public const NUMBER_FIELDS = 'display_phone_number,verified_name,quality_rating,code_verification_status,name_status,throughput,platform_type,is_on_biz_app';
 
-    public const WABA_FIELDS = 'name,account_review_status,business_verification_status,currency,timezone_id';
+    /**
+     * The messaging limit belongs to the business portfolio and is read from
+     * the WABA node. Its per-number predecessor, messaging_limit_tier, was
+     * deprecated by Meta on 2026-05-21 and returns nothing on v24.0+.
+     */
+    public const WABA_FIELDS = 'name,account_review_status,business_verification_status,currency,timezone_id,whatsapp_business_manager_messaging_limit';
 
     public function __construct(
         private readonly CredentialResolver $credentials,
@@ -46,7 +51,6 @@ class RefreshWhatsAppConnection
             'quality_rating' => $this->string($remote, 'quality_rating'),
             'code_verification_status' => $this->string($remote, 'code_verification_status'),
             'name_status' => $this->string($remote, 'name_status'),
-            'messaging_limit_tier' => $this->string($remote, 'messaging_limit_tier'),
             'throughput_level' => isset($throughput['level']) ? (string) $throughput['level'] : null,
             'platform_type' => $this->string($remote, 'platform_type'),
         ], fn (?string $value): bool => $value !== null);
@@ -63,6 +67,7 @@ class RefreshWhatsAppConnection
             'business_verification_status' => $this->string($waba, 'business_verification_status'),
             'timezone_id' => $this->string($waba, 'timezone_id'),
             'currency' => $this->string($waba, 'currency'),
+            'portfolio_messaging_limit' => $this->string($waba, 'whatsapp_business_manager_messaging_limit'),
         ], fn (?string $value): bool => $value !== null))->save();
 
         // One button, one expectation: the business profile is part of what

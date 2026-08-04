@@ -76,7 +76,6 @@ function primeGraphFixtures(FakeGraphClient $fake, string $wabaId, string $phone
         'verified_name' => 'Acme Stores',
         'display_phone_number' => '+256 700 000 001',
         'quality_rating' => 'GREEN',
-        'messaging_limit_tier' => 'TIER_1K',
         'throughput' => ['level' => 'STANDARD'],
         'platform_type' => 'CLOUD_API',
         'is_on_biz_app' => $overrides['is_on_biz_app'] ?? false,
