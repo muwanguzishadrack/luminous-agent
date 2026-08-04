@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
- * Versioned Meta rate card — global, not tenant-scoped; rows are picked by
+ * Versioned Meta rate card — global, not team-scoped; rows are picked by
  * effective date and never retroactively repriced (docs/02-data-model.md §11).
  *
  * @property string $id

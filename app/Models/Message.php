@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Enums\MessageDirection;
 use App\Enums\MessageOrigin;
 use App\Enums\MessageStatus;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\MessageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $conversation_id
  * @property string|null $wamid
  * @property MessageDirection $direction
@@ -44,7 +44,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $read_at
  * @property Carbon|null $failed_at
  * @property Carbon $occurred_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Conversation $conversation
  * @property-read Media|null $media
  * @property-read User|null $sentBy
@@ -55,7 +55,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['conversation_id', 'wamid', 'direction', 'type', 'body', 'payload', 'media_id', 'replied_to_wamid', 'reaction_to_wamid', 'origin', 'sent_by_user_id', 'campaign_id', 'template_id', 'status', 'error_code', 'error_detail', 'pricing_category', 'billable', 'cost_minor', 'token_count', 'sent_at', 'delivered_at', 'read_at', 'failed_at', 'occurred_at'])]
 class Message extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<MessageFactory> */
     use HasFactory;

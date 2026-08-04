@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
  * (docs/02-data-model.md §6).
  *
  * @property int $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $template_id
  * @property string $event
  * @property string|null $from
@@ -21,13 +21,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $reason
  * @property array<string, mixed> $payload
  * @property Carbon $occurred_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Template $template
  */
 #[Fillable(['template_id', 'event', 'from', 'to', 'reason', 'payload', 'occurred_at'])]
 class TemplateEvent extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTeam;
 
     /**
      * The table carries no created_at / updated_at pair.

@@ -36,15 +36,11 @@ export default function SequencesIndex({
     );
 }
 
-SequencesIndex.layout = (props: {
-    currentTenant?: { slug: string } | null;
-}) => ({
+SequencesIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Sequences',
-            href: props.currentTenant
-                ? sequences(props.currentTenant.slug)
-                : '/',
+            href: props.team ? sequences(props.team.slug) : '/',
         },
     ],
 });

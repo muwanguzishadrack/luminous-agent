@@ -13,7 +13,7 @@ never by editing history.
 plus four small public HTTP surfaces.
 
 **Decision.** One Laravel 13 app serving Inertia 3 + React 19. No separate API service for the UI. A
-tenant-facing public API is a thin additional layer, not the primary consumer.
+team-facing public API is a thin additional layer, not the primary consumer.
 
 **Consequences.** No client-side data layer to maintain; server is the single source of truth; typed
 props generated from PHP. Trade-off: React Native or a third-party UI would need the public API built
@@ -21,22 +21,22 @@ first.
 
 ---
 
-## D-002 — Single database, `tenant_id` column, not database-per-tenant
+## D-002 — Single database, `team_id` column, not database-per-team
 
 **Date:** 2026-08-01 · **Status:** accepted
 
-**Context.** Multi-tenant SaaS with potentially thousands of small tenants. Cross-tenant queries are
+**Context.** Multi-tenant SaaS with potentially thousands of small teams. Cross-team queries are
 needed for our own platform analytics and health monitoring.
 
-**Decision.** One Postgres database. `tenant_id` on every tenant-scoped table. Three enforcement
+**Decision.** One Postgres database. `team_id` on every team-scoped table. Three enforcement
 layers: Eloquent global scope, **Postgres RLS**, and policies.
 
 **Consequences.** Simple migrations, cheap onboarding, easy platform-wide reporting. The risk is a
-missing scope, which RLS is specifically there to catch. Requires the tenant-isolation test suite in
+missing scope, which RLS is specifically there to catch. Requires the team-isolation test suite in
 `06-testing-strategy.md` §2 as a permanent gate.
 
-**Rejected:** `stancl/tenancy` multi-database — operationally heavy for thousands of small tenants,
-and makes our own cross-tenant analytics painful.
+**Rejected:** `stancl/tenancy` multi-database — operationally heavy for thousands of small teams,
+and makes our own cross-team analytics painful.
 
 ---
 
@@ -91,12 +91,12 @@ rolling week, which is not currently a constraint.
 
 **Context.** MBA is a managed agent with conversation context, catalog grounding, tool calling via
 Connectors, and event-driven proactivity. Building an equivalent means RAG, evals, hosting, and
-guardrails per tenant.
+guardrails per team.
 
 **Decision.** Use MBA. Do not build a custom agent in v1.
 
 **Consequences.**
-- Fast per-client setup; no AI engineering per tenant.
+- Fast per-client setup; no AI engineering per team.
 - **Cost is $2.00/1M tokens ≈ 4–5¢ per message, charged even inside the 24h and 72h windows.**
 - **Limited to 5 verticals** — clients outside them get no AI (risk R1, question D2).
 - Our differentiation moves to the Connector layer and handover orchestration, which is where M5 puts
@@ -141,7 +141,7 @@ amounts, a 300-second access token, and callbacks that fire for only three of ni
 
 **Context.** ioTec's spec states explicitly that `externalId` "is not required to be unique."
 
-**Decision.** Generate a ULID per attempt, unique-indexed per tenant. Treat ioTec's `id` (uuid) as the
+**Decision.** Generate a ULID per attempt, unique-indexed per team. Treat ioTec's `id` (uuid) as the
 authoritative reference for reconciliation. Retries always create a **new** `external_id`.
 
 **Consequences.** Reconciliation joins on `provider_id`, with `external-id/{externalId}` as a recovery
@@ -303,6 +303,44 @@ platform-specific binaries we depend on.
 
 **Rejected.** Sail (D-003 stands: too slow on macOS for the request path); a supervisor on the host
 (no auto-start with the stack, and one more thing to install).
+
+---
+
+## D-020 — "Tenants" become "Teams"; one team per user, one WABA per team
+
+**Date:** 2026-08-04 · **Status:** accepted (user decision)
+
+**Context.** The original model was many teams per user and many WABAs per team. That bought a
+workspace switcher and a "current team" pointer on the user, and the pointer caused a real incident:
+a live Embedded Signup landed in the wrong workspace, because `/onboarding` was not team-scoped while
+`/demo/...` URLs switched the active team underneath it. The connection was made against whichever
+workspace happened to be current, not the one the operator was looking at. Separately, "tenant" is our
+word, not the client's — nobody signing up for a WhatsApp CRM calls their business a tenant.
+
+**Decision.** Collapse the model: **one team per user, one WABA and one phone number per team.**
+Rename the entity from "tenant" to "team" everywhere — table `teams`, pivot `team_user`, column
+`team_id`, `Team`/`TeamInvitation`/`BelongsToTeam`/`TeamScope`/`TeamManager`, the `Teams` facade,
+`MissingTeamContext`, and the RLS setting `app.team_id`. "Multi-tenant" survives only where it names
+the architecture class, as in the title of `05-security-multitenancy.md`.
+
+**Consequences.**
+- No team switcher, and no `users.current_team_id`: the single `team_user` row *is* the context, so
+  there is no pointer that can disagree with the membership. The wrong-workspace class of bug is
+  designed out rather than guarded against.
+- Onboarding cannot target the wrong workspace — there is only one it can target.
+- A person who runs two businesses needs two logins, one per team. We do not merge, switch, or link
+  them (`modules/m0-onboarding.md` §8).
+- The settings surface simplifies to a single `/settings/whatsapp` page — connected account, business
+  profile, billing link-out, disconnect — instead of a list of numbers.
+- Per-number user scoping (`team_user.phone_number_ids`) disappears; role is the only authorization
+  axis within a team.
+- `team_user` needs a **user-aware** RLS policy, because a user's membership must be readable before
+  team context exists (`05-security-multitenancy.md` §1 layer 2).
+
+**Rejected.** Keeping many-to-many with a hardened switcher — the incident was a design smell, not a
+missing guard, and every route would have carried the burden of proving it was team-scoped. Also
+rejected: keeping the word "tenant" for the entity, which forces a translation layer between our
+schema and every sentence we say to a customer.
 
 ---
 

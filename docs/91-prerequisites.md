@@ -62,7 +62,7 @@ These change what gets built. I have made a default assumption for each — tell
 | D1 | **Markets** — Uganda only, or East Africa / wider? | ✅ Confirmed 2026-08-03: **Uganda only in v1.** `UGX` primary, `USD` supported. Phone normalisation defaults to `+256`. |
 | D2 | **Verticals outside MBA's five** — do you have pipeline in healthcare, education, fintech, logistics, or NGOs? | ✅ Confirmed 2026-08-03: **all pipeline is within MBA's five verticals.** No fallback agent needed — risk R1 closed, D-007 resolved by D-018. |
 | D3 | **Billing model** — subscription only, or subscription + markup on messaging? | Subscription + configurable markup, prepaid wallet. This is why `usage_meters` stores markup per row. |
-| D4 | **White-label in v1?** | Built into the schema (`tenants.settings`) but the UI lands in Phase 4. |
+| D4 | **White-label in v1?** | Built into the schema (`teams.settings`) but the UI lands in Phase 4. |
 | D5 | **Coexistence priority** | Phase 4. It is your strongest SMB wedge but the 24h one-shot sync needs a proven ingest pipeline first. Say if you want it earlier and accept the risk. |
 | D6 | **Realtime transport** — Laravel Reverb (self-hosted) or Pusher? | Reverb — no per-message cost, runs in the same Docker stack. |
 | D7 | **Brand** — logo, primary colour, font | Using shadcn/ui defaults with neutral tokens until you provide these. |

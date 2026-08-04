@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\PhoneNumberFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -16,12 +16,13 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $waba_account_id
  * @property string $phone_number_id
  * @property string $display_phone_number
  * @property string $verified_name
  * @property string $code_verification_status
+ * @property string $name_status
  * @property string $quality_rating
  * @property string $messaging_limit_tier
  * @property string $throughput_level
@@ -32,17 +33,18 @@ use Illuminate\Support\Carbon;
  * @property bool $pin_set
  * @property array<string, mixed> $profile
  * @property string $status
- * @property-read Tenant $tenant
+ * @property Carbon|null $last_synced_at
+ * @property-read Team $team
  * @property-read WabaAccount $wabaAccount
  * @property-read Collection<int, Conversation> $conversations
  * @property-read Collection<int, Campaign> $campaigns
  * @property-read MbaAgent|null $mbaAgent
  * @property-read Collection<int, HealthEvent> $healthEvents
  */
-#[Fillable(['waba_account_id', 'phone_number_id', 'display_phone_number', 'verified_name', 'code_verification_status', 'quality_rating', 'messaging_limit_tier', 'throughput_level', 'platform_type', 'is_on_biz_app', 'is_official_business_account', 'registered_at', 'pin_set', 'profile', 'status'])]
+#[Fillable(['waba_account_id', 'phone_number_id', 'display_phone_number', 'verified_name', 'code_verification_status', 'name_status', 'quality_rating', 'messaging_limit_tier', 'throughput_level', 'platform_type', 'is_on_biz_app', 'is_official_business_account', 'registered_at', 'pin_set', 'profile', 'status', 'last_synced_at'])]
 class PhoneNumber extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<PhoneNumberFactory> */
     use HasFactory;
@@ -117,6 +119,7 @@ class PhoneNumber extends Model
             'registered_at' => 'datetime',
             'pin_set' => 'boolean',
             'profile' => 'array',
+            'last_synced_at' => 'datetime',
         ];
     }
 }

@@ -18,7 +18,6 @@ import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { TenantSwitcher } from '@/components/tenant-switcher';
 import {
     Sidebar,
     SidebarContent,
@@ -46,21 +45,21 @@ import type { RouteDefinition } from '@/wayfinder';
 
 export function AppSidebar() {
     const page = usePage();
-    const slug = page.props.currentTenant?.slug;
+    const slug = page.props.team?.slug;
 
-    const tenantHref = (
+    const teamHref = (
         route: (args: string | number) => RouteDefinition<'get'>,
     ): NavItem['href'] => (slug ? route(slug) : '/');
 
     const platformNavItems: NavItem[] = [
         {
             title: 'Dashboard',
-            href: tenantHref(dashboard),
+            href: teamHref(dashboard),
             icon: LayoutGrid,
         },
         {
             title: 'Inbox',
-            href: tenantHref(inbox),
+            href: teamHref(inbox),
             icon: MessagesSquare,
         },
     ];
@@ -68,12 +67,12 @@ export function AppSidebar() {
     const audienceNavItems: NavItem[] = [
         {
             title: 'Contacts',
-            href: tenantHref(contacts),
+            href: teamHref(contacts),
             icon: Users,
         },
         {
             title: 'Segments',
-            href: tenantHref(segments),
+            href: teamHref(segments),
             icon: Filter,
         },
     ];
@@ -81,17 +80,17 @@ export function AppSidebar() {
     const messagingNavItems: NavItem[] = [
         {
             title: 'Templates',
-            href: tenantHref(templates),
+            href: teamHref(templates),
             icon: LayoutTemplate,
         },
         {
             title: 'Campaigns',
-            href: tenantHref(campaigns),
+            href: teamHref(campaigns),
             icon: Megaphone,
         },
         {
             title: 'Sequences',
-            href: tenantHref(sequences),
+            href: teamHref(sequences),
             icon: Workflow,
         },
     ];
@@ -99,22 +98,22 @@ export function AppSidebar() {
     const businessNavItems: NavItem[] = [
         {
             title: 'AI Agent',
-            href: tenantHref(agent),
+            href: teamHref(agent),
             icon: Bot,
         },
         {
             title: 'Commerce',
-            href: tenantHref(commerce),
+            href: teamHref(commerce),
             icon: ShoppingBag,
         },
         {
             title: 'Growth',
-            href: tenantHref(growth),
+            href: teamHref(growth),
             icon: TrendingUp,
         },
         {
             title: 'Analytics',
-            href: tenantHref(analytics),
+            href: teamHref(analytics),
             icon: ChartColumn,
         },
     ];
@@ -138,15 +137,10 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={tenantHref(dashboard)} prefetch>
+                            <Link href={teamHref(dashboard)} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <TenantSwitcher />
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>

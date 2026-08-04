@@ -18,13 +18,13 @@ use Illuminate\Support\Carbon;
  * @property string $body_sha256
  * @property array<string, mixed> $headers
  * @property array<string, mixed> $payload
- * @property string|null $tenant_id
+ * @property string|null $team_id
  * @property Carbon $received_at
  * @property Carbon|null $processed_at
  * @property int $attempts
  * @property WebhookDeliveryStatus $status
  * @property array<string, mixed>|null $error
- * @property-read Tenant|null $tenant
+ * @property-read Team|null $team
  */
 #[Fillable(['source', 'body_sha256', 'headers', 'payload', 'received_at', 'processed_at', 'attempts', 'status', 'error'])]
 class WebhookDelivery extends Model
@@ -55,13 +55,13 @@ class WebhookDelivery extends Model
     }
 
     /**
-     * Nullable by design: rows are created platform-level before any tenant
-     * context exists (docs/02 §3) — hence no BelongsToTenant trait.
+     * Nullable by design: rows are created platform-level before any team
+     * context exists (docs/02 §3) — hence no BelongsToTeam trait.
      *
-     * @return BelongsTo<Tenant, $this>
+     * @return BelongsTo<Team, $this>
      */
-    public function tenant(): BelongsTo
+    public function team(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Team::class);
     }
 }

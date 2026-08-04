@@ -10,7 +10,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string|null $tenant_id
+ * @property string|null $team_id
  * @property string $nonce
  * @property string|null $feature_type
  * @property string $es_version
@@ -23,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $contacts_sync_requested_at
  * @property string $status
  * @property array<string, mixed>|null $failure
- * @property-read Tenant|null $tenant
+ * @property-read Team|null $team
  */
 #[Fillable(['nonce', 'feature_type', 'es_version', 'events', 'waba_id', 'phone_number_id', 'code_exchanged_at', 'history_sync_requested_at', 'history_sync_completed_at', 'contacts_sync_requested_at', 'status', 'failure'])]
 class OnboardingSession extends Model
@@ -55,13 +55,13 @@ class OnboardingSession extends Model
     }
 
     /**
-     * Nullable by design: rows are created platform-level before any tenant
-     * context exists (docs/02 §3) — hence no BelongsToTenant trait.
+     * Nullable by design: rows are created platform-level before any team
+     * context exists (docs/02 §3) — hence no BelongsToTeam trait.
      *
-     * @return BelongsTo<Tenant, $this>
+     * @return BelongsTo<Team, $this>
      */
-    public function tenant(): BelongsTo
+    public function team(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Team::class);
     }
 }

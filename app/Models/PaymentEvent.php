@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PaymentStatus;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\PaymentEventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +16,7 @@ use Illuminate\Support\Carbon;
  * same status are both recorded (docs/02-data-model.md §9).
  *
  * @property int $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $payment_id
  * @property PaymentStatus $status
  * @property string|null $status_code
@@ -25,13 +25,13 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed> $raw
  * @property Carbon $occurred_at
  * @property Carbon $received_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Payment $payment
  */
 #[Fillable(['payment_id', 'status', 'status_code', 'status_message', 'source', 'raw', 'occurred_at', 'received_at'])]
 class PaymentEvent extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTeam;
 
     /** @use HasFactory<PaymentEventFactory> */
     use HasFactory;

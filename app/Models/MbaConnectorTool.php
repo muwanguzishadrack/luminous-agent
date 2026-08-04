@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Connector tool — no tenant_id column; tenancy flows through the connector
+ * Connector tool — no team_id column; team scoping flows through the connector
  * (docs/02-data-model.md §8).
  *
  * @property string $id

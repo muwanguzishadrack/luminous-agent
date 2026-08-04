@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\UsageBasis;
 use App\Enums\UsageMeter as UsageMeterEnum;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
  * re-marked in place, D-012 (docs/02-data-model.md §11).
  *
  * @property int $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string|null $waba_account_id
  * @property string|null $phone_number_id
  * @property UsageMeterEnum $meter
@@ -32,7 +32,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $message_id
  * @property string|null $campaign_id
  * @property Carbon|null $created_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read WabaAccount|null $wabaAccount
  * @property-read PhoneNumber|null $phoneNumber
  * @property-read Message|null $message
@@ -41,7 +41,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['waba_account_id', 'phone_number_id', 'meter', 'category', 'country', 'quantity', 'unit_cost_micros', 'cost_minor', 'markup_minor', 'currency', 'source', 'basis', 'occurred_on', 'message_id', 'campaign_id'])]
 class UsageMeter extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTeam;
 
     /**
      * The table only carries created_at.

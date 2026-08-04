@@ -9,8 +9,8 @@ use App\Services\Meta\Exceptions\CredentialRevoked;
 
 /**
  * The token vault's read side (docs/modules/m0-onboarding.md §2): resolves
- * the current tenant's credential — MetaCredential is tenant-scoped, so the
- * caller must have established tenant context — and returns a GraphClient
+ * the current team's credential — MetaCredential is team-scoped, so the
+ * caller must have established team context — and returns a GraphClient
  * carrying that bearer token, wrapped in the revocation circuit breaker.
  */
 class CredentialResolver
@@ -18,7 +18,7 @@ class CredentialResolver
     public function __construct(private readonly GraphClient $client) {}
 
     /**
-     * A GraphClient authenticated with the tenant's business token — the
+     * A GraphClient authenticated with the team's business token — the
      * credential used for all Cloud API calls (docs/reference §1).
      */
     public function businessClient(): GraphClient
@@ -32,8 +32,8 @@ class CredentialResolver
     }
 
     /**
-     * @throws CredentialRevoked when the tenant's business token has been revoked
-     * @throws CredentialMissing when the tenant has never connected WhatsApp
+     * @throws CredentialRevoked when the team's business token has been revoked
+     * @throws CredentialMissing when the team has never connected WhatsApp
      */
     public function businessCredential(): MetaCredential
     {

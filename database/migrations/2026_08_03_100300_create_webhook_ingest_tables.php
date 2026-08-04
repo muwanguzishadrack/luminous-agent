@@ -19,7 +19,7 @@ return new class extends Migration
             $table->char('body_sha256', 64);
             $table->jsonb('headers'); // signature, delivery id
             $table->jsonb('payload'); // raw body
-            $table->uuid('tenant_id')->nullable()->index(); // resolved during processing, null if unresolvable
+            $table->uuid('team_id')->nullable()->index(); // resolved during processing, null if unresolvable
             $table->timestampTz('received_at');
             $table->timestampTz('processed_at')->nullable();
             $table->smallInteger('attempts')->default(0);
@@ -28,7 +28,7 @@ return new class extends Migration
 
             $table->unique(['source', 'body_sha256']); // idempotent delivery
             $table->index(['status', 'received_at']);
-            $table->index(['tenant_id', 'received_at']);
+            $table->index(['team_id', 'received_at']);
         });
     }
 

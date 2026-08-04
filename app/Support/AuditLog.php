@@ -3,7 +3,7 @@
 namespace App\Support;
 
 use App\Enums\ActorType;
-use App\Support\Facades\Tenancy;
+use App\Support\Facades\Teams;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +24,7 @@ class AuditLog
         array $context = [],
     ): void {
         DB::table('audit_logs')->insert([
-            'tenant_id' => Tenancy::currentIdOrFail(),
+            'team_id' => Teams::currentIdOrFail(),
             'actor_type' => $actorType->value,
             'actor_id' => $actorId,
             'action' => $action,

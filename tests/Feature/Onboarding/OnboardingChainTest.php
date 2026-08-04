@@ -11,7 +11,7 @@ use App\Models\Template;
 use App\Models\User;
 use App\Models\WabaAccount;
 use App\Services\Meta\GraphClient;
-use App\Support\Facades\Tenancy;
+use App\Support\Facades\Teams;
 use Database\Factories\OnboardingSessionFactory;
 use Illuminate\Support\Facades\DB;
 use Tests\Fakes\FakeGraphClient;
@@ -25,68 +25,9 @@ beforeEach(function () {
     config()->set('meta.app_id', '918140000000000');
 });
 
-/**
- * Canned Graph fixtures for a full onboarding of one WABA + one number.
- *
- * @param  array<string, mixed>  $overrides
- */
-function primeGraphFixtures(FakeGraphClient $fake, string $wabaId, string $phoneNumberId, array $overrides = []): void
-{
-    $fake->fake("GET {$wabaId}/subscribed_apps", $overrides['subscribed_apps'] ?? [
-        'data' => [['whatsapp_business_api_data' => [
-            'id' => config('meta.app_id'),
-            'name' => 'Luminous',
-            'link' => 'https://luminous.test',
-        ]]],
-    ]);
-
-    $fake->fake("GET {$wabaId}", [
-        'id' => $wabaId,
-        'name' => 'Acme Stores',
-        'currency' => 'UGX',
-        'timezone_id' => 'Africa/Kampala',
-        'account_review_status' => 'APPROVED',
-        'business_verification_status' => 'verified',
-        'owner_business_info' => ['id' => '515151515151515', 'name' => 'Acme Holdings'],
-        'is_payment_enabled' => true,
-    ]);
-
-    $fake->fake("GET {$wabaId}/phone_numbers", ['data' => [[
-        'id' => $phoneNumberId,
-        'verified_name' => 'Acme Stores',
-        'display_phone_number' => '+256 700 000 001',
-        'quality_rating' => 'GREEN',
-        'messaging_limit_tier' => 'TIER_1K',
-        'throughput' => ['level' => 'STANDARD'],
-        'platform_type' => 'CLOUD_API',
-        'is_on_biz_app' => $overrides['is_on_biz_app'] ?? false,
-        'code_verification_status' => 'VERIFIED',
-    ]]]);
-
-    $fake->fake("GET {$wabaId}/message_templates", ['data' => [
-        [
-            'id' => '771111111111111',
-            'name' => 'order_update',
-            'language' => 'en',
-            'category' => 'UTILITY',
-            'status' => 'APPROVED',
-            'components' => [['type' => 'BODY', 'text' => 'Your order {{1}} has shipped.']],
-            'quality_score' => ['score' => 'GREEN', 'date' => 1754179200],
-        ],
-        [
-            'id' => '772222222222222',
-            'name' => 'welcome_offer',
-            'language' => 'en',
-            'category' => 'MARKETING',
-            'status' => 'PENDING',
-            'components' => [['type' => 'BODY', 'text' => 'Hi {{1}}, welcome!']],
-        ],
-    ], 'paging' => ['cursors' => ['before' => 'BEFORE', 'after' => 'AFTER']]]);
-}
-
 test('the exchange drives a session from started to complete, leaking no secrets', function () {
-    $user = User::factory()->create();
-    $tenant = $user->currentTenant;
+    $user = User::factory()->withTeam()->create();
+    $team = $user->team;
     [$wabaId, $phoneNumberId] = ['102290129340398', '106540352242922'];
 
     /** @var FakeGraphClient $fake */
@@ -105,7 +46,7 @@ test('the exchange drives a session from started to complete, leaking no secrets
     expect($response->json('status'))->toBe('complete')
         ->and($response->json('failure'))->toBeNull();
 
-    Tenancy::initialize($tenant);
+    Teams::initialize($team);
 
     $session = OnboardingSession::query()->sole();
     $credential = MetaCredential::query()->sole();
@@ -115,7 +56,7 @@ test('the exchange drives a session from started to complete, leaking no secrets
     // Status flow ended at complete, with the exchange timestamped.
     expect($session->status)->toBe('complete')
         ->and($session->code_exchanged_at)->not->toBeNull()
-        ->and($tenant->fresh()->status)->toBe('active');
+        ->and($team->fresh()->status)->toBe('active');
 
     // Credential vaulted: business type, last4 for display, scoped to the WABA.
     expect($credential->type)->toBe(MetaCredentialType::Business)
@@ -191,8 +132,8 @@ test('the exchange drives a session from started to complete, leaking no secrets
 });
 
 test('register is skipped entirely for coexistence sessions', function () {
-    $user = User::factory()->create();
-    $tenant = $user->currentTenant;
+    $user = User::factory()->withTeam()->create();
+    $team = $user->team;
     [$wabaId, $phoneNumberId] = ['102290129340398', '106540352242922'];
 
     /** @var FakeGraphClient $fake */
@@ -214,7 +155,7 @@ test('register is skipped entirely for coexistence sessions', function () {
         'phone_number_id' => $phoneNumberId,
     ])->assertOk()->assertJsonPath('status', 'complete');
 
-    Tenancy::initialize($tenant);
+    Teams::initialize($team);
 
     // No register call ever went out — the number is already registered on
     // the WhatsApp Business app.
@@ -223,18 +164,18 @@ test('register is skipped entirely for coexistence sessions', function () {
     $phone = PhoneNumber::query()->sole();
     expect($phone->pin_set)->toBeFalse()
         ->and($phone->is_on_biz_app)->toBeTrue()
-        ->and($tenant->fresh()->status)->toBe('active')
+        ->and($team->fresh()->status)->toBe('active')
         ->and(DB::table('audit_logs')->where('action', 'onboarding.phone_registration_skipped')->count())->toBe(1)
         ->and(DB::table('audit_logs')->where('action', 'onboarding.phone_registered')->count())->toBe(0);
 });
 
 test('a 133010 register failure fails the session at the register step and resume completes it', function () {
-    $user = User::factory()->create();
-    $tenant = $user->currentTenant;
-    Tenancy::initialize($tenant);
+    $user = User::factory()->withTeam()->create();
+    $team = $user->team;
+    Teams::initialize($team);
 
     MetaCredential::factory()->create(['waba_account_id' => null]);
-    $session = OnboardingSessionFactory::new()->exchanged()->create(['tenant_id' => $tenant->id]);
+    $session = OnboardingSessionFactory::new()->exchanged()->create(['team_id' => $team->id]);
 
     /** @var FakeGraphClient $fake */
     $fake = app(GraphClient::class);
@@ -259,22 +200,22 @@ test('a 133010 register failure fails the session at the register step and resum
         ->assertJsonPath('status', 'complete')
         ->assertJsonPath('failure', null);
 
-    Tenancy::initialize($tenant);
+    Teams::initialize($team);
 
     // Resumed, not restarted: the code exchange never re-ran.
     expect(collect($fake->calls)->where('path', 'oauth/access_token')->count())->toBe(0)
         ->and(collect($fake->calls)->where('path', "{$session->phone_number_id}/register")->count())->toBe(2)
         ->and($session->fresh()->failure)->toBeNull()
-        ->and($tenant->fresh()->status)->toBe('active');
+        ->and($team->fresh()->status)->toBe('active');
 });
 
 test('a subscribed_apps verification miss fails the step loudly', function () {
-    $user = User::factory()->create();
-    $tenant = $user->currentTenant;
-    Tenancy::initialize($tenant);
+    $user = User::factory()->withTeam()->create();
+    $team = $user->team;
+    Teams::initialize($team);
 
     MetaCredential::factory()->create(['waba_account_id' => null]);
-    $session = OnboardingSessionFactory::new()->exchanged()->create(['tenant_id' => $tenant->id]);
+    $session = OnboardingSessionFactory::new()->exchanged()->create(['team_id' => $team->id]);
 
     /** @var FakeGraphClient $fake */
     $fake = app(GraphClient::class);
@@ -291,12 +232,12 @@ test('a subscribed_apps verification miss fails the step loudly', function () {
         ->and($session->failure['step'])->toBe('subscribe_waba_webhooks')
         ->and($session->failure['at'])->toBe('registered')
         ->and($session->failure['error']['message'])->toContain('subscribed_apps')
-        ->and($tenant->fresh()->status)->not->toBe('active');
+        ->and($team->fresh()->status)->not->toBe('active');
 });
 
 test('re-running the chain on a completed session changes nothing', function () {
-    $user = User::factory()->create();
-    $tenant = $user->currentTenant;
+    $user = User::factory()->withTeam()->create();
+    $team = $user->team;
     [$wabaId, $phoneNumberId] = ['102290129340398', '106540352242922'];
 
     /** @var FakeGraphClient $fake */
@@ -311,7 +252,7 @@ test('re-running the chain on a completed session changes nothing', function () 
         'phone_number_id' => $phoneNumberId,
     ])->assertJsonPath('status', 'complete')->json('id');
 
-    Tenancy::initialize($tenant);
+    Teams::initialize($team);
     $snapshot = [
         'audits' => DB::table('audit_logs')->count(),
         'graph_calls' => count($fake->calls),
@@ -326,7 +267,7 @@ test('re-running the chain on a completed session changes nothing', function () 
         ->assertOk()
         ->assertJsonPath('status', 'complete');
 
-    Tenancy::initialize($tenant);
+    Teams::initialize($team);
     expect(DB::table('audit_logs')->count())->toBe($snapshot['audits'])
         ->and(count($fake->calls))->toBe($snapshot['graph_calls'])
         ->and(MetaCredential::query()->count())->toBe($snapshot['credentials'])
@@ -337,12 +278,12 @@ test('re-running the chain on a completed session changes nothing', function () 
 });
 
 test('resuming a mid-flow session re-runs only idempotent sync steps', function () {
-    $user = User::factory()->create();
-    $tenant = $user->currentTenant;
-    Tenancy::initialize($tenant);
+    $user = User::factory()->withTeam()->create();
+    $team = $user->team;
+    Teams::initialize($team);
 
     MetaCredential::factory()->create(['waba_account_id' => null]);
-    $session = OnboardingSessionFactory::new()->exchanged()->create(['tenant_id' => $tenant->id]);
+    $session = OnboardingSessionFactory::new()->exchanged()->create(['team_id' => $team->id]);
 
     /** @var FakeGraphClient $fake */
     $fake = app(GraphClient::class);
@@ -366,12 +307,12 @@ test('resuming a mid-flow session re-runs only idempotent sync steps', function 
 });
 
 test('a number with existing two-step verification fails with 133005 and completes once the real PIN is supplied', function () {
-    $user = User::factory()->create();
-    $tenant = $user->currentTenant;
-    Tenancy::initialize($tenant);
+    $user = User::factory()->withTeam()->create();
+    $team = $user->team;
+    Teams::initialize($team);
 
     MetaCredential::factory()->create(['waba_account_id' => null]);
-    $session = OnboardingSessionFactory::new()->exchanged()->create(['tenant_id' => $tenant->id]);
+    $session = OnboardingSessionFactory::new()->exchanged()->create(['team_id' => $team->id]);
 
     /** @var FakeGraphClient $graph */
     $graph = app(GraphClient::class);
@@ -397,12 +338,12 @@ test('a number with existing two-step verification fails with 133005 and complet
 });
 
 test('the supplied PIN is never persisted or written to the audit trail', function () {
-    $user = User::factory()->create();
-    $tenant = $user->currentTenant;
-    Tenancy::initialize($tenant);
+    $user = User::factory()->withTeam()->create();
+    $team = $user->team;
+    Teams::initialize($team);
 
     MetaCredential::factory()->create(['waba_account_id' => null]);
-    $session = OnboardingSessionFactory::new()->exchanged()->create(['tenant_id' => $tenant->id]);
+    $session = OnboardingSessionFactory::new()->exchanged()->create(['team_id' => $team->id]);
 
     /** @var FakeGraphClient $graph */
     $graph = app(GraphClient::class);

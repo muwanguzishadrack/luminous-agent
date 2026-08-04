@@ -17,7 +17,7 @@ return new class extends Migration
     {
         Schema::create('mba_agents', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('phone_number_id')->unique(); // group 2 — plain uuid; one agent per number
             $table->jsonb('eligibility'); // last Eligibility response + checked_at
             $table->string('vertical')->nullable(); // one of Meta's 5 approved verticals
@@ -34,7 +34,7 @@ return new class extends Migration
 
         Schema::create('mba_allowlist_entries', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('mba_agent_id')->constrained('mba_agents');
             $table->string('wa_id');
             $table->uuid('added_by')->nullable();
@@ -46,7 +46,7 @@ return new class extends Migration
 
         Schema::create('mba_knowledge_sources', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('mba_agent_id')->constrained('mba_agents');
             $table->string('kind'); // enum: business_info|faq|website|file (app-level)
             $table->string('external_id')->nullable(); // Meta's id for the source
@@ -63,7 +63,7 @@ return new class extends Migration
         // Bearer tokens Meta uses to call us. Store only a hash.
         Schema::create('connector_tokens', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('name');
             $table->string('token_hash');
             $table->string('prefix');
@@ -75,17 +75,17 @@ return new class extends Migration
 
         Schema::create('mba_connectors', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('mba_agent_id')->constrained('mba_agents');
             $table->string('external_id')->nullable(); // Meta's connector id
             $table->string('name');
-            $table->string('base_url'); // our own connector endpoints, per-tenant
+            $table->string('base_url'); // our own connector endpoints, per-team
             $table->string('auth_scheme');
             $table->foreignUuid('token_id')->constrained('connector_tokens');
             $table->boolean('enabled')->default(false);
         });
 
-        // Doc §8 lists no tenant_id on mba_connector_tools — scoping flows through the connector.
+        // Doc §8 lists no team_id on mba_connector_tools — scoping flows through the connector.
         Schema::create('mba_connector_tools', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('connector_id')->constrained('mba_connectors');
@@ -104,7 +104,7 @@ return new class extends Migration
         // Agent Events we push to Meta.
         Schema::create('mba_events', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('conversation_id')->index(); // group 5 — plain uuid
             $table->string('kind');
             $table->jsonb('payload');
@@ -116,7 +116,7 @@ return new class extends Migration
 
         Schema::create('mba_evals', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('mba_agent_id')->constrained('mba_agents');
             $table->string('kind'); // enum: test|eval (app-level)
             $table->jsonb('request');

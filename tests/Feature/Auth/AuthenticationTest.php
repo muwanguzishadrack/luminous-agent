@@ -1,10 +1,7 @@
 <?php
 
-use App\Enums\TenantRole;
-use App\Models\Tenant;
-use App\Models\TenantInvitation;
+use App\Models\TeamInvitation;
 use App\Models\User;
-use App\Support\Facades\Tenancy;
 use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
@@ -15,14 +12,12 @@ test('login screen can be rendered', function () {
     $response->assertOk();
 });
 
-test('login screen includes tenant invitation context', function () {
-    $owner = User::factory()->create();
-    $tenant = Tenant::factory()->create(['name' => 'Laravel Tenant']);
-    Tenancy::initialize($tenant);
-    $tenant->members()->attach($owner, ['role' => TenantRole::Owner->value]);
+test('login screen includes team invitation context', function () {
+    $owner = User::factory()->withTeam('Laravel Team')->create();
+    $team = $owner->team;
 
-    $invitation = TenantInvitation::factory()->create([
-        'tenant_id' => $tenant->id,
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team->id,
         'email' => 'invited@example.com',
         'invited_by' => $owner->id,
     ]);
@@ -32,13 +27,13 @@ test('login screen includes tenant invitation context', function () {
     $response->assertOk();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('auth/login')
-        ->where('tenantInvitation.code', $invitation->code)
-        ->where('tenantInvitation.tenantName', 'Laravel Tenant'),
+        ->where('teamInvitation.code', $invitation->code)
+        ->where('teamInvitation.teamName', 'Laravel Team'),
     );
 });
 
 test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTeam()->create();
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
@@ -59,7 +54,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
         'confirmPassword' => true,
     ]);
 
-    $user = User::factory()->withTwoFactor()->create();
+    $user = User::factory()->withTeam()->withTwoFactor()->create();
 
     $response = $this->post(route('login'), [
         'email' => $user->email,
@@ -72,7 +67,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
 });
 
 test('users can not authenticate with invalid password', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTeam()->create();
 
     $this->post(route('login.store'), [
         'email' => $user->email,
@@ -83,7 +78,7 @@ test('users can not authenticate with invalid password', function () {
 });
 
 test('users can logout', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTeam()->create();
 
     $response = $this->actingAs($user)->post(route('logout'));
 
@@ -92,7 +87,7 @@ test('users can logout', function () {
 });
 
 test('users are rate limited', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTeam()->create();
 
     RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
 

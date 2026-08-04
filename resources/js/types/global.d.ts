@@ -1,5 +1,5 @@
 import type { Auth } from '@/types/auth';
-import type { Tenant } from '@/types/tenants';
+import type { Team } from '@/types/teams';
 
 declare module 'react' {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -14,8 +14,8 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
-            currentTenant: Tenant | null;
-            tenants: Tenant[];
+            /** The signed-in user's single team (D-020). */
+            team: Team | null;
             [key: string]: unknown;
         };
     }

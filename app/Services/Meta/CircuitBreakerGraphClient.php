@@ -57,11 +57,33 @@ class CircuitBreakerGraphClient implements GraphClient
         return $this->inner->exchangeCode($code);
     }
 
+    public function businessProfile(string $phoneNumberId): array
+    {
+        return $this->guard(fn (): array => $this->inner->businessProfile($phoneNumberId));
+    }
+
+    public function updateBusinessProfile(string $phoneNumberId, array $fields): array
+    {
+        return $this->guard(fn (): array => $this->inner->updateBusinessProfile($phoneNumberId, $fields));
+    }
+
+    public function deregister(string $phoneNumberId): array
+    {
+        return $this->guard(fn (): array => $this->inner->deregister($phoneNumberId));
+    }
+
+    public function uploadResumable(string $contents, string $mimeType, string $fileName): string
+    {
+        return $this->guard(fn (): string => $this->inner->uploadResumable($contents, $mimeType, $fileName));
+    }
+
     /**
-     * @param  callable(): array<string, mixed>  $call
-     * @return array<string, mixed>
+     * @template TReturn
+     *
+     * @param  callable(): TReturn  $call
+     * @return TReturn
      */
-    private function guard(callable $call): array
+    private function guard(callable $call): mixed
     {
         if ($this->credential->revoked_at !== null) {
             throw new CredentialRevoked($this->credential);

@@ -31,15 +31,11 @@ export default function TemplatesIndex({ templateCount }: Props) {
     );
 }
 
-TemplatesIndex.layout = (props: {
-    currentTenant?: { slug: string } | null;
-}) => ({
+TemplatesIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Templates',
-            href: props.currentTenant
-                ? templates(props.currentTenant.slug)
-                : '/',
+            href: props.team ? templates(props.team.slug) : '/',
         },
     ],
 });

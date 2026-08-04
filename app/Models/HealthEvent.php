@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\HealthSeverity;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
  * (docs/02-data-model.md §11).
  *
  * @property int $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string|null $phone_number_id
  * @property string $kind
  * @property HealthSeverity $severity
@@ -22,14 +22,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon $occurred_at
  * @property Carbon|null $acknowledged_at
  * @property string|null $acknowledged_by
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read PhoneNumber|null $phoneNumber
  * @property-read User|null $acknowledgedBy
  */
 #[Fillable(['phone_number_id', 'kind', 'severity', 'payload', 'occurred_at', 'acknowledged_at', 'acknowledged_by'])]
 class HealthEvent extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTeam;
 
     /**
      * The table carries no created_at / updated_at pair.

@@ -16,7 +16,7 @@ return new class extends Migration
         // Append-only, the billing source of truth. Rows are never re-marked in place (D-012).
         Schema::create('usage_meters', function (Blueprint $table) {
             $table->id(); // high-volume append-only: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('waba_account_id')->nullable(); // group 2 — plain uuid
             $table->uuid('phone_number_id')->nullable(); // group 2 — plain uuid
             $table->string('meter'); // template_message|service_message|mba_tokens|platform_seat|payment_fee
@@ -29,15 +29,15 @@ return new class extends Migration
             $table->char('currency', 3);
             $table->string('source'); // enum: webhook|pricing_analytics|mba_analytics|computed (app-level)
             $table->string('basis'); // enum: estimate|actual|correction (app-level)
-            $table->date('occurred_on')->index(); // tenant WABA timezone day
+            $table->date('occurred_on')->index(); // team WABA timezone day
             $table->uuid('message_id')->nullable(); // traceability
             $table->uuid('campaign_id')->nullable(); // traceability
             $table->timestampTz('created_at');
 
-            $table->index(['tenant_id', 'occurred_on', 'meter']);
+            $table->index(['team_id', 'occurred_on', 'meter']);
         });
 
-        // Versioned Meta rate card (M8 §2). Global — no tenant_id, no RLS.
+        // Versioned Meta rate card (M8 §2). Global — no team_id, no RLS.
         Schema::create('rate_cards', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->date('effective_from');
@@ -52,10 +52,10 @@ return new class extends Migration
             $table->unique(['effective_from', 'region', 'category', 'tier_min']);
         });
 
-        // Tenant billing ledger, append-only. Balance is always SUM(amount_minor).
+        // Team billing ledger, append-only. Balance is always SUM(amount_minor).
         Schema::create('wallet_entries', function (Blueprint $table) {
             $table->id(); // high-volume append-only: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('kind'); // enum: topup|charge|adjustment|refund (app-level)
             $table->bigInteger('amount_minor'); // signed
             $table->char('currency', 3);
@@ -69,7 +69,7 @@ return new class extends Migration
         // Cached pulls from Meta so dashboards do not hammer the Graph API.
         Schema::create('analytics_snapshots', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('waba_account_id'); // group 2 — plain uuid
             $table->string('field'); // analytics|conversation_analytics|pricing_analytics|template_analytics|template_group_analytics
             $table->string('granularity');
@@ -88,7 +88,7 @@ return new class extends Migration
 
         Schema::create('health_events', function (Blueprint $table) {
             $table->id(); // high-volume append-only: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('phone_number_id')->nullable(); // group 2 — plain uuid
             $table->string('kind');
             $table->string('severity'); // enum: info|warning|critical (app-level)

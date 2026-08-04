@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +11,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $sequence_id
  * @property string $contact_id
  * @property string|null $current_step_id
@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $next_run_at
  * @property Carbon|null $exited_at
  * @property string|null $exit_reason
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Sequence $sequence
  * @property-read Contact $contact
  * @property-read SequenceStep|null $currentStep
@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['sequence_id', 'contact_id', 'current_step_id', 'status', 'enrolled_at', 'next_run_at', 'exited_at', 'exit_reason'])]
 class SequenceEnrollment extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.

@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MetaCredentialType;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\MetaCredentialFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string|null $waba_account_id
  * @property MetaCredentialType $type
  * @property string $token
@@ -25,13 +25,13 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $revoked_at
  * @property Carbon|null $last_used_at
  * @property int $failure_count
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read WabaAccount|null $wabaAccount
  */
 #[Fillable(['waba_account_id', 'type', 'token', 'token_last4', 'scopes', 'issued_at', 'expires_at', 'revoked_at', 'last_used_at', 'failure_count'])]
 class MetaCredential extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<MetaCredentialFactory> */
     use HasFactory;

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\TemplateGroupFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -16,17 +16,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * resolve the right language per contact (docs/02-data-model.md §6).
  *
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $key
  * @property string $name
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Collection<int, Template> $templates
  * @property-read Collection<int, Campaign> $campaigns
  */
 #[Fillable(['key', 'name'])]
 class TemplateGroup extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<TemplateGroupFactory> */
     use HasFactory;

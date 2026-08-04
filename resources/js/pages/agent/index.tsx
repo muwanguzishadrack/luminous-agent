@@ -39,11 +39,11 @@ export default function AgentIndex({
     );
 }
 
-AgentIndex.layout = (props: { currentTenant?: { slug: string } | null }) => ({
+AgentIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'AI Agent',
-            href: props.currentTenant ? agent(props.currentTenant.slug) : '/',
+            href: props.team ? agent(props.team.slug) : '/',
         },
     ],
 });

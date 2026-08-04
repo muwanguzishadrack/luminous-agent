@@ -7,7 +7,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * The tenant's vaulted credential has been revoked — by Meta (consecutive
+ * The team's vaulted credential has been revoked — by Meta (consecutive
  * auth failures tripping the circuit breaker) or by the client in Business
  * Suite. The UI renders this as a reconnect prompt, never a 500
  * (docs/modules/m0-onboarding.md §2).
@@ -22,7 +22,7 @@ class CredentialRevoked extends RuntimeException
         // value never appears in any message or log.
         parent::__construct(
             sprintf(
-                'The Meta %s credential (…%s) has been revoked — the tenant must reconnect WhatsApp.',
+                'The Meta %s credential (…%s) has been revoked — the team must reconnect WhatsApp.',
                 $credential->type->value,
                 $credential->token_last4,
             ),

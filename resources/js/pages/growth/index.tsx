@@ -33,11 +33,11 @@ export default function GrowthIndex({ referralCount, conversionCount }: Props) {
     );
 }
 
-GrowthIndex.layout = (props: { currentTenant?: { slug: string } | null }) => ({
+GrowthIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Growth',
-            href: props.currentTenant ? growth(props.currentTenant.slug) : '/',
+            href: props.team ? growth(props.team.slug) : '/',
         },
     ],
 });

@@ -10,7 +10,7 @@ Tables: `contacts`, `contact_identifiers`, `consents`, `consent_states`, `labels
 
 ## 1. Contact record
 
-Created automatically on first inbound message (or import). Keyed on `(tenant_id, wa_id)`.
+Created automatically on first inbound message (or import). Keyed on `(team_id, wa_id)`.
 
 | Field group | Contents |
 |---|---|
@@ -18,15 +18,15 @@ Created automatically on first inbound message (or import). Keyed on `(tenant_id
 | Classification | `lifecycle_stage`, `owner_id`, `source`, labels |
 | Activity | `first_seen_at`, `last_inbound_at`, `last_outbound_at` |
 | Commerce | `lifetime_value`, `orders_count` (denormalised from M6) |
-| Custom | `custom_fields` jsonb against a tenant-defined field schema |
+| Custom | `custom_fields` jsonb against a team-defined field schema |
 | State | `is_blocked` |
 
 `profile_name` is whatever WhatsApp reports and we never overwrite it — agents edit `display_name`.
 
 ### Custom field schema
 
-Tenant-defined field definitions (type: text, number, date, select, multi-select, boolean) stored in
-`tenants.settings.contact_fields`. Values live in `contacts.custom_fields` with a GIN index. Typed
+Team-defined field definitions (type: text, number, date, select, multi-select, boolean) stored in
+`teams.settings.contact_fields`. Values live in `contacts.custom_fields` with a GIN index. Typed
 validation happens on write so segment filters can rely on types.
 
 ---
@@ -77,11 +77,11 @@ consents (event)  ──listener──▶  consent_states (current)  ──read 
 | Source | Authority |
 |---|---|
 | `whatsapp_native` | **Highest.** From the `user_preferences` webhook ("Stop promotions") |
-| `inbound_keyword` | Customer texted STOP/START — configurable keyword set per tenant |
+| `inbound_keyword` | Customer texted STOP/START — configurable keyword set per team |
 | `web_form` | Opt-in form with IP + timestamp evidence |
 | `import` | CSV with a required attestation field |
 | `agent` | An agent recorded it in conversation — requires a note |
-| `api` | Tenant's own system |
+| `api` | Team's own system |
 | `system` | Automatic events we generate — e.g. the marketing revoke on a number change (§2) |
 
 ### Precedence rules
@@ -111,7 +111,7 @@ Suppressions are **recorded**, not silently dropped: `campaign_recipients.suppre
 
 ### Keyword handling
 
-Per-tenant configurable, defaults: `STOP`, `UNSUBSCRIBE`, `OPTOUT` → revoke marketing and auto-reply
+Per-team configurable, defaults: `STOP`, `UNSUBSCRIBE`, `OPTOUT` → revoke marketing and auto-reply
 with a confirmation. `START`, `SUBSCRIBE` → grant. Keyword processing happens in the inbound handler
 before assignment, so an opt-out is honoured even if no agent ever opens the thread.
 

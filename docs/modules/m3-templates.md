@@ -50,7 +50,7 @@ Three-pane: component tree · form · live WhatsApp-accurate preview.
 
 ### Category selection with a cost warning
 
-The category picker shows, inline, the **live rate for the tenant's most common recipient country**
+The category picker shows, inline, the **live rate for the team's most common recipient country**
 pulled from `pricing_analytics`, plus a one-line explanation:
 
 > **Utility** — order updates, receipts, reminders. Free inside the 24-hour service window
@@ -107,7 +107,7 @@ Rules:
 `template_group` is a logical set: one `key`, many `templates` differing by `language`.
 
 Campaign targeting selects a **group**; per recipient we resolve
-`contact.locale → group's template in that language → tenant default language`. If neither exists,
+`contact.locale → group's template in that language → team default language`. If neither exists,
 suppress with `unsupported_language` rather than sending the wrong language.
 
 ---
@@ -155,7 +155,7 @@ A campaign pre-flight check warns when the chosen template is being paced.
 |---|---|
 | TTL override (`ttl_seconds`) | Expire a time-sensitive message rather than deliver it late |
 | Tap-target override | Control button behaviour |
-| Bulk management | Import/export templates as JSON; clone across WABAs for agencies |
+| Bulk management | Import/export templates as JSON — the transport an agency uses to move a template set between the teams it runs |
 | Preview API | Meta's template previews where available |
 
 ---

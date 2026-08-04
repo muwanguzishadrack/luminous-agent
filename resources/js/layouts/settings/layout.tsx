@@ -6,10 +6,10 @@ import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
-import { index as numbers } from '@/routes/numbers';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
-import { index as tenants } from '@/routes/tenants';
+import { edit as editTeam } from '@/routes/team';
+import { show as whatsapp } from '@/routes/whatsapp';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
@@ -24,13 +24,13 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
-        title: 'Tenants',
-        href: tenants(),
+        title: 'Team',
+        href: editTeam(),
         icon: null,
     },
     {
-        title: 'Numbers',
-        href: numbers(),
+        title: 'WhatsApp',
+        href: whatsapp(),
         icon: null,
     },
     {

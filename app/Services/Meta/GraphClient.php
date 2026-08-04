@@ -10,7 +10,7 @@ namespace App\Services\Meta;
 interface GraphClient
 {
     /**
-     * Use the given bearer token (a per-tenant business token, or the BISU
+     * Use the given bearer token (a per-team business token, or the BISU
      * token for MBA calls) for subsequent requests.
      */
     public function withToken(string $token): static;
@@ -54,4 +54,39 @@ interface GraphClient
      * @return array<string, mixed>
      */
     public function exchangeCode(string $code): array;
+
+    /**
+     * GET /{phone-number-id}/whatsapp_business_profile — the readable half of
+     * the profile, including `profile_picture_url`
+     * (docs/reference/whatsapp-cloud-api.md §5).
+     *
+     * @return array<string, mixed>
+     */
+    public function businessProfile(string $phoneNumberId): array;
+
+    /**
+     * POST /{phone-number-id}/whatsapp_business_profile. `messaging_product`
+     * is added here so no caller can forget it — Meta requires it on every
+     * write. The response is `{"success": true}` and echoes nothing back, so
+     * callers must re-read the profile afterwards.
+     *
+     * @param  array<string, mixed>  $fields
+     * @return array<string, mixed>
+     */
+    public function updateBusinessProfile(string $phoneNumberId, array $fields): array;
+
+    /**
+     * POST /{phone-number-id}/deregister. Not permitted for a Coexistence
+     * number (`is_on_biz_app: true`) — the caller must branch before calling.
+     *
+     * @return array<string, mixed>
+     */
+    public function deregister(string $phoneNumberId): array;
+
+    /**
+     * Resumable Upload API — uploads the bytes and returns the opaque file
+     * handle that `profile_picture_handle` takes. Two legs: create the upload
+     * session on the app node, then POST the binary to the session.
+     */
+    public function uploadResumable(string $contents, string $mimeType, string $fileName): string;
 }

@@ -6,12 +6,16 @@ A multi-tenant SaaS WhatsApp CRM. Businesses connect their own WhatsApp Business
 our portal and get a shared team inbox, contact management, message templates, broadcast campaigns,
 an AI agent, in-conversation commerce with local payments, ad attribution, and analytics.
 
+One business is one **team**: a user belongs to one team, and a team holds one WhatsApp Business
+Account with one phone number. No workspace switching — someone running two businesses signs up
+twice (`92-decisions.md` D-020).
+
 We operate as a **Meta Tech Provider**. That has three hard consequences that shape the product:
 
 | Consequence | Impact |
 |---|---|
 | We have **no credit line** | Each client attaches their own payment method to their WABA. Meta bills them for messaging; we bill them for the platform. |
-| Clients' assets are **shared with our app**, not owned by us | Every API call is made with a per-tenant token, never a global one. |
+| Clients' assets are **shared with our app**, not owned by us | Every API call is made with a per-team token, never a global one. |
 | Onboarding is **self-serve via Embedded Signup** | The onboarding flow is a first-class product surface, not an internal tool. |
 
 ## Who it is for
@@ -55,7 +59,7 @@ Details in `modules/`.
 | # | Risk | Mitigation |
 |---|---|---|
 | R1 | **MBA covers only 5 verticals** (Automotive, CPG, Professional Services, Retail/Ecommerce, Travel). Clients outside them get an inbox with no AI at all. | **Closed 2026-08-03** — pipeline confirmed all-in-vertical (D-018). Eligibility gating stays as a safety net; reopen if the pipeline mix changes. |
-| R2 | **Oct 1, 2026**: all non-template messages become chargeable, including human agent replies that are free today. Every tenant's cost profile changes. | Build the dual-meter cost engine (M8) before that date and ship the impact projector. |
+| R2 | **Oct 1, 2026**: all non-template messages become chargeable, including human agent replies that are free today. Every team's cost profile changes. | Build the dual-meter cost engine (M8) before that date and ship the impact projector. |
 | R3 | **Embedded Signup v2 is removed Oct 15, 2026.** | Build on v4 from day one. Never touch v2. |
 | R4 | Coexistence history sync is a **one-shot 24-hour window**. A failed sync means the client must offboard and redo the whole flow. | Do not ship Coexistence until webhook ingest is proven under load. |
 | R5 | MBA context boundaries are undocumented (does it see pre-enablement history? messages we sent while holding control?). | Empirical test on a sandbox number before designing handoff UX. Tracked in `91-prerequisites.md`. |
@@ -67,4 +71,4 @@ Details in `modules/`.
 2. Zero lost inbound messages over a 7-day soak with induced failures.
 3. A broadcast to 10,000 contacts completes inside rate limits with per-recipient outcome visibility.
 4. A customer can order and pay by MTN or Airtel money inside one WhatsApp conversation, with the payment reconciled automatically.
-5. Every tenant can see, for any date range: messages sent, cost, MBA token spend, revenue collected, and per-campaign ROI.
+5. Every team can see, for any date range: messages sent, cost, MBA token spend, revenue collected, and per-campaign ROI.

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -14,21 +14,21 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $name
  * @property array<string, mixed> $definition
  * @property bool $is_dynamic
  * @property int|null $estimated_size
  * @property Carbon|null $last_evaluated_at
  * @property Carbon|null $deleted_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Collection<int, Contact> $contacts
  * @property-read Collection<int, Campaign> $campaigns
  */
 #[Fillable(['name', 'definition', 'is_dynamic', 'estimated_size', 'last_evaluated_at'])]
 class Segment extends Model
 {
-    use BelongsToTenant, HasUuids, SoftDeletes;
+    use BelongsToTeam, HasUuids, SoftDeletes;
 
     /**
      * The table carries no created_at / updated_at pair.

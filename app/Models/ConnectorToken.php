@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
  * (docs/02-data-model.md §8).
  *
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $name
  * @property string $token_hash
  * @property string $prefix
@@ -23,13 +23,13 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $last_used_at
  * @property Carbon|null $expires_at
  * @property Carbon|null $revoked_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Collection<int, MbaConnector> $connectors
  */
 #[Fillable(['name', 'token_hash', 'prefix', 'abilities', 'last_used_at', 'expires_at', 'revoked_at'])]
 class ConnectorToken extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.

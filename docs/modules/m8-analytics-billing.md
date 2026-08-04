@@ -1,6 +1,6 @@
 # M8 — Analytics, Billing & Health
 
-**Goal:** every tenant knows what messaging costs, what it earns, and whether their number is healthy
+**Goal:** every team knows what messaging costs, what it earns, and whether their number is healthy
 — and we bill correctly on two different meters.
 
 Tables: `usage_meters`, `wallet_entries`, `analytics_snapshots`, `health_events`.
@@ -29,7 +29,7 @@ GET /{waba-id}?fields=<field>.<filters>
 `(waba, field, granularity, start, end, dimensions_hash)` so re-pulls are idempotent.
 
 Handle a missing `COST` gracefully — Meta omits it for WABAs on a Solution Partner credit line. As a
-Tech Provider our tenants pay Meta directly so it should be present, but never assume.
+Tech Provider our clients pay Meta directly so it should be present, but never assume.
 
 ---
 
@@ -63,7 +63,7 @@ August 1, 2026*, and as of writing they were still listed as forthcoming.
 
 Until confirmed:
 - Estimate tokens as `mba_message_count × config('pricing.mba.est_tokens_per_message')` (22,500).
-- Cost = `tokens / 1_000_000 × 2.00 USD`, converted to the tenant currency.
+- Cost = `tokens / 1_000_000 × 2.00 USD`, converted to the team currency.
 - **Label every MBA figure in the UI as an estimate**, with a tooltip explaining why.
 - A task in `91-prerequisites.md` re-checks the docs; switch to real data the moment it exists and
   backfill.
@@ -72,13 +72,13 @@ Until confirmed:
 
 ## 3. The October 1, 2026 impact projector
 
-A dedicated, tenant-facing screen. From Oct 1:
+A dedicated, team-facing screen. From Oct 1:
 
 - **all** non-template messages become chargeable, including human agent replies that are free today
 - **service messages** are priced at utility/authentication market rates, with **no volume tiers**
 - **utility templates inside the CSW stop being free**
 
-For each tenant we compute, from the last 30 days of actual traffic:
+For each team we compute, from the last 30 days of actual traffic:
 
 | Line | Today | From Oct 1 |
 |---|---|---|
@@ -109,7 +109,7 @@ surprised.
 | Invoicing | Monthly: platform subscription + marked-up messaging + MBA tokens + payment fees |
 | Alerts | 50% / 80% / 100% of wallet balance; email + in-app |
 | Hard stop | At zero balance, refuse campaign starts and (configurable) agent replies. **Never block inbound receipt.** |
-| Currency | Tenant billing currency; FX rate snapshotted per invoice, never recomputed |
+| Currency | Team billing currency; FX rate snapshotted per invoice, never recomputed |
 
 Rule: **never block inbound message processing for a billing reason.** Losing a customer's message
 because a client's wallet ran dry is unacceptable and would breach the "never drop a webhook" invariant.
@@ -178,7 +178,7 @@ Plus our own watchdogs:
 | ioTec callback silence | No callback received in 24h while collections were created → check portal config |
 
 The Meta DevTools API-usage surface (rate limits, call volume, deprecations) is also worth polling to
-watch our **app-level** headroom across all tenants, not just per-WABA.
+watch our **app-level** headroom across all teams, not just per-WABA.
 
 ---
 
@@ -197,7 +197,7 @@ watch our **app-level** headroom across all tenants, not just per-WABA.
 | `/settings/billing` | Wallet, invoices, plan, markup (admin-visible), alerts |
 
 Dashboards read `analytics_snapshots` and `usage_meters`, **never** the Graph API live. A dashboard
-that hammers Meta will consume the tenant's own rate-limit budget and slow their sends.
+that hammers Meta will consume the team's own rate-limit budget and slow their sends.
 
 ---
 
@@ -210,7 +210,7 @@ that hammers Meta will consume the tenant's own rate-limit budget and slow their
 | Meta omits `COST` | Fall back to rate-card computation; flag as computed |
 | MBA analytics ship mid-flight | Backfill via append: a `basis = correction` row reversing each estimate plus a `basis = actual` row — never re-mark rows in place (D-012) |
 | Rate card changes on a quarter boundary | Rows keep the rate effective at `occurred_on` — never retroactively repriced |
-| Tenant changes billing currency | New FX snapshot; historical invoices unchanged |
+| Team changes billing currency | New FX snapshot; historical invoices unchanged |
 | Wallet goes negative from a late reconciliation | Allowed; flagged for collection. Never rewrite history. |
 | Clock skew between Meta's day and ours | All day boundaries use the **WABA timezone**, stored on `waba_accounts` |
 | Very large export | Queued, emailed as a signed link, expires in 24h |
@@ -223,7 +223,7 @@ that hammers Meta will consume the tenant's own rate-limit budget and slow their
 2. `usage_meters` totals for a day reconcile to `pricing_analytics` within 1% after the daily job.
 3. A cost correction appears as a new row; no `usage_meters` row is ever updated or deleted.
 4. MBA figures are visibly labelled as estimates and switch to actuals when real data exists.
-5. The Oct 1 projector produces a per-tenant delta from real 30-day traffic and states its assumptions.
+5. The Oct 1 projector produces a per-team delta from real 30-day traffic and states its assumptions.
 6. A RED quality event pauses running campaigns within one webhook cycle and raises a critical
    `health_events` row.
 7. Zero wallet balance blocks campaign starts but **does not** block inbound webhook processing —

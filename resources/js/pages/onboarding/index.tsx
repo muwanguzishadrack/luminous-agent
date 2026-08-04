@@ -24,7 +24,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { dashboard } from '@/routes';
-import { index as numbersIndex } from '@/routes/numbers';
 import {
     events as onboardingEvents,
     exchange as onboardingExchange,
@@ -32,6 +31,7 @@ import {
     resume as onboardingResume,
     start as onboardingStart,
 } from '@/routes/onboarding';
+import { show as whatsappShow } from '@/routes/whatsapp';
 
 const COEXISTENCE_FEATURE = 'whatsapp_business_app_onboarding';
 
@@ -77,7 +77,7 @@ const CHAIN_STEPS = [
         title: 'Check payment readiness',
         doneAt: 5,
     },
-    { name: 'complete_onboarding', title: 'Activate the workspace', doneAt: 5 },
+    { name: 'complete_onboarding', title: 'Activate the team', doneAt: 5 },
 ] as const;
 
 const STALLED_STATUSES = ['finished', 'exchanged', 'registered', 'syncing'];
@@ -114,7 +114,7 @@ type EmbeddedSignupEvent = {
 };
 
 type Props = {
-    tenant: { name: string; slug: string };
+    connectedWabaId: string | null;
     appId: string;
     configId: string;
     graphVersion: string;
@@ -223,14 +223,15 @@ function StepIcon({ state }: { state: StepState }) {
 }
 
 export default function OnboardingIndex({
-    tenant,
+    connectedWabaId,
     appId,
     configId,
     graphVersion,
     session,
 }: Props) {
     const page = usePage();
-    const slug = page.props.currentTenant?.slug;
+    const team = page.props.team;
+    const slug = team?.slug;
 
     const [sdkState, setSdkState] = useState<'loading' | 'ready' | 'failed'>(
         () =>
@@ -550,17 +551,16 @@ export default function OnboardingIndex({
                     description="Link a WhatsApp Business number through Meta's Embedded Signup — live in your inbox in under ten minutes."
                 />
 
-                {/* Onboarding is not tenant-prefixed, so it follows the
-                    current workspace. Say which one, so a real number is
-                    never connected to the wrong tenant by accident. */}
+                {/* There is exactly one team this can land in (D-020) —
+                    naming it is reassurance, not a choice. */}
                 <Alert>
                     <Building2 className="size-4" />
                     <AlertTitle>
-                        Connecting to {tenant.name || 'this workspace'}
+                        Connecting to {team?.name || 'your team'}
                     </AlertTitle>
                     <AlertDescription>
-                        The number you connect will belong to this workspace.
-                        Switch workspace first if that is not where you want it.
+                        The number you connect belongs to this team. A team
+                        holds one WhatsApp Business Account and one number.
                     </AlertDescription>
                 </Alert>
 
@@ -587,7 +587,22 @@ export default function OnboardingIndex({
                     </Alert>
                 )}
 
-                {isComplete ? (
+                {connectedWabaId !== null && !isComplete && (
+                    <Alert>
+                        <CircleAlert className="size-4" />
+                        <AlertTitle>
+                            This team is already connected to WhatsApp
+                        </AlertTitle>
+                        <AlertDescription>
+                            WhatsApp Business Account {connectedWabaId} is
+                            already connected. A team holds one account and one
+                            number — disconnect the current one first, or use a
+                            separate login for another business.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {isComplete || connectedWabaId !== null ? (
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-2">
@@ -602,8 +617,8 @@ export default function OnboardingIndex({
                         </CardHeader>
                         <CardContent className="flex flex-wrap gap-2">
                             <Button asChild>
-                                <Link href={numbersIndex()}>
-                                    View your numbers
+                                <Link href={whatsappShow()}>
+                                    View your connection
                                 </Link>
                             </Button>
                             <Button variant="outline" asChild>

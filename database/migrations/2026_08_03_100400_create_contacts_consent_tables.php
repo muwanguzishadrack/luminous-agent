@@ -17,13 +17,13 @@ return new class extends Migration
     {
         Schema::create('contacts', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('wa_id'); // WhatsApp user id (MSISDN, no +)
             $table->string('phone_e164'); // normalised, for display and ioTec
             $table->string('profile_name')->nullable(); // as WhatsApp reports it — not editable by us
             $table->string('display_name')->nullable(); // CRM-editable
             $table->string('locale')->nullable(); // drives template language selection
-            $table->string('lifecycle_stage'); // lead|engaged|customer|churned — tenant-configurable
+            $table->string('lifecycle_stage'); // lead|engaged|customer|churned — team-configurable
             $table->uuid('owner_id')->nullable(); // assigned CRM owner (user)
             $table->string('source'); // inbound|ctwa|import|coexistence|api|qr
             $table->timestampTz('first_seen_at')->nullable();
@@ -33,19 +33,19 @@ return new class extends Migration
             $table->integer('orders_count')->default(0); // denormalised
             $table->boolean('is_blocked')->default(false); // platform-level block applied
             $table->timestampTz('undeliverable_at')->nullable(); // set on send error 131026
-            $table->jsonb('custom_fields')->default('{}'); // tenant-defined schema
+            $table->jsonb('custom_fields')->default('{}'); // team-defined schema
             $table->softDeletesTz();
 
-            $table->unique(['tenant_id', 'wa_id']);
+            $table->unique(['team_id', 'wa_id']);
         });
 
-        // Doc §4: index (tenant_id, last_inbound_at desc) and GIN on custom_fields.
-        DB::statement('CREATE INDEX contacts_tenant_last_inbound_idx ON contacts (tenant_id, last_inbound_at DESC)');
+        // Doc §4: index (team_id, last_inbound_at desc) and GIN on custom_fields.
+        DB::statement('CREATE INDEX contacts_team_last_inbound_idx ON contacts (team_id, last_inbound_at DESC)');
         DB::statement('CREATE INDEX contacts_custom_fields_gin ON contacts USING GIN (custom_fields)');
 
         Schema::create('contact_identifiers', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('contact_id')->constrained('contacts');
             $table->index('contact_id');
             $table->string('kind'); // enum: wa_id|bsuid|parent_bsuid|phone (app-level)
@@ -54,12 +54,12 @@ return new class extends Migration
             $table->timestampTz('verified_at')->nullable();
             $table->timestampTz('retired_at')->nullable(); // retired when the number changes hands
 
-            $table->unique(['tenant_id', 'kind', 'value']);
+            $table->unique(['team_id', 'kind', 'value']);
         });
 
         Schema::create('consents', function (Blueprint $table) {
             $table->id(); // append-only, never updated: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('contact_id')->constrained('contacts');
             $table->index('contact_id');
             $table->string('scope'); // enum: marketing|utility|authentication|all
@@ -73,7 +73,7 @@ return new class extends Migration
         // Materialised read model, one row per contact+scope — the table the send guard reads.
         Schema::create('consent_states', function (Blueprint $table) {
             $table->uuid('id')->primary(); // doc lists no pk; uuid pk per project convention
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('contact_id')->constrained('contacts');
             $table->string('scope');
             $table->string('state');
@@ -86,14 +86,14 @@ return new class extends Migration
 
         Schema::create('labels', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('name');
             $table->string('color');
             $table->string('kind'); // enum: contact|conversation (app-level)
             $table->uuid('created_by')->nullable();
         });
 
-        // Pivots are simple (doc §4) — no tenant_id column, scoping flows through labels.
+        // Pivots are simple (doc §4) — no team_id column, scoping flows through labels.
         Schema::create('contact_label', function (Blueprint $table) {
             $table->foreignUuid('label_id')->constrained('labels')->cascadeOnDelete();
             $table->foreignUuid('contact_id')->constrained('contacts')->cascadeOnDelete();
@@ -112,7 +112,7 @@ return new class extends Migration
 
         Schema::create('notes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('contact_id')->constrained('contacts');
             $table->index('contact_id');
             $table->uuid('conversation_id')->nullable()->index(); // group 5 — plain uuid
@@ -124,7 +124,7 @@ return new class extends Migration
 
         Schema::create('segments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('name');
             $table->jsonb('definition'); // AST of the filter tree (field/op/value + and/or)
             $table->boolean('is_dynamic')->default(true); // dynamic = re-evaluated at send

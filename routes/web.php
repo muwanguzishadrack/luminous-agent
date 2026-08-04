@@ -12,16 +12,16 @@ use App\Http\Controllers\Onboarding\OnboardingController;
 use App\Http\Controllers\Onboarding\OnboardingPageController;
 use App\Http\Controllers\SegmentController;
 use App\Http\Controllers\SequenceController;
-use App\Http\Controllers\Settings\NumbersController;
+use App\Http\Controllers\Settings\WhatsAppController;
+use App\Http\Controllers\Teams\TeamInvitationController;
 use App\Http\Controllers\TemplateController;
-use App\Http\Controllers\Tenants\TenantInvitationController;
-use App\Http\Middleware\EnsureTenantMembership;
+use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
-Route::prefix('{current_tenant}')
-    ->middleware(['auth', 'verified', EnsureTenantMembership::class])
+Route::prefix('{team}')
+    ->middleware(['auth', 'verified', EnsureTeamMembership::class])
     ->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
         Route::get('inbox', InboxController::class)->name('inbox');
@@ -36,14 +36,34 @@ Route::prefix('{current_tenant}')
         Route::get('analytics', AnalyticsController::class)->name('analytics');
     });
 
+// The invitee's own path. Public because they have no account yet — the
+// 64-character invitation code is the credential, and the throttle keeps it
+// from being guessed at.
+Route::middleware('throttle:6,1')->group(function () {
+    Route::get('invitations/{invitation}/join', [TeamInvitationController::class, 'join'])->name('invitations.join');
+    Route::post('invitations/{invitation}/join', [TeamInvitationController::class, 'storeMember'])->name('invitations.join.store');
+});
+
 Route::middleware(['auth'])->group(function () {
-    Route::get('invitations/{invitation}/accept', [TenantInvitationController::class, 'accept'])->name('invitations.accept');
-    Route::delete('invitations/{invitation}', [TenantInvitationController::class, 'decline'])->name('invitations.decline');
+    // Not team-prefixed: an invitee has no team to prefix it with (D-020).
+    Route::get('invitations', [TeamInvitationController::class, 'index'])->name('invitations.index');
+    Route::get('invitations/{invitation}/accept', [TeamInvitationController::class, 'accept'])->name('invitations.accept');
+    Route::delete('invitations/{invitation}', [TeamInvitationController::class, 'decline'])->name('invitations.decline');
 
     // Embedded Signup v4 (docs/modules/m0-onboarding.md §1, §7): the
-    // launcher page, the tenant's numbers, and the server chain endpoints.
+    // launcher page, the team's single WhatsApp connection, and the server
+    // chain endpoints.
     Route::get('onboarding', OnboardingPageController::class)->name('onboarding.index');
-    Route::get('settings/numbers', NumbersController::class)->name('numbers.index');
+    Route::get('settings/whatsapp', [WhatsAppController::class, 'show'])->name('whatsapp.show');
+
+    // Writes against the live connection: a team is required, so the
+    // membership middleware refuses (403) rather than the RLS scope silently
+    // matching nothing.
+    Route::middleware(EnsureTeamMembership::class)->group(function () {
+        Route::post('settings/whatsapp/refresh', [WhatsAppController::class, 'refresh'])->name('whatsapp.refresh');
+        Route::post('settings/whatsapp/profile', [WhatsAppController::class, 'updateProfile'])->name('whatsapp.profile.update');
+        Route::delete('settings/whatsapp', [WhatsAppController::class, 'disconnect'])->name('whatsapp.disconnect');
+    });
 
     Route::post('onboarding/start', [OnboardingController::class, 'start'])->name('onboarding.start');
     Route::post('onboarding/events', [OnboardingController::class, 'events'])->name('onboarding.events');

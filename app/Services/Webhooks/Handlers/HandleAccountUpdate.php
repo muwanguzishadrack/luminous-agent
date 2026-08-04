@@ -2,18 +2,18 @@
 
 namespace App\Services\Webhooks\Handlers;
 
-use App\Models\Tenant;
+use App\Models\Team;
 use App\Models\WabaAccount;
 use App\Services\Webhooks\FieldHandler;
 use App\Support\AuditLog;
 
 /**
- * Tenant lifecycle from account_update events
+ * Team lifecycle from account_update events
  * (docs/reference/whatsapp-webhooks.md §8, docs/modules/m0-onboarding.md §5).
  */
 class HandleAccountUpdate implements FieldHandler
 {
-    public function handle(Tenant $tenant, array $value, array $entry): void
+    public function handle(Team $team, array $value, array $entry): void
     {
         $event = (string) ($value['event'] ?? '');
         $wabaId = (string) ($value['waba_info']['waba_id'] ?? $entry['id'] ?? '');
@@ -21,8 +21,8 @@ class HandleAccountUpdate implements FieldHandler
         $waba = WabaAccount::query()->where('waba_id', $wabaId)->first();
 
         match ($event) {
-            'PARTNER_ADDED', 'PARTNER_APP_INSTALLED' => $this->reactivate($tenant, $waba, $value),
-            'PARTNER_REMOVED' => $this->suspend($tenant, $waba, $value),
+            'PARTNER_ADDED', 'PARTNER_APP_INSTALLED' => $this->reactivate($team, $waba, $value),
+            'PARTNER_REMOVED' => $this->suspend($team, $waba, $value),
             default => $this->recordAccountChange($waba, $value),
         };
 
@@ -36,10 +36,10 @@ class HandleAccountUpdate implements FieldHandler
     /**
      * @param  array<string, mixed>  $value
      */
-    private function reactivate(Tenant $tenant, ?WabaAccount $waba, array $value): void
+    private function reactivate(Team $team, ?WabaAccount $waba, array $value): void
     {
-        if ($tenant->status === 'suspended') {
-            $tenant->forceFill(['status' => 'active', 'suspended_reason' => null])->save();
+        if ($team->status === 'suspended') {
+            $team->forceFill(['status' => 'active', 'suspended_reason' => null])->save();
         }
 
         $waba?->forceFill([
@@ -55,9 +55,9 @@ class HandleAccountUpdate implements FieldHandler
      *
      * @param  array<string, mixed>  $value
      */
-    private function suspend(Tenant $tenant, ?WabaAccount $waba, array $value): void
+    private function suspend(Team $team, ?WabaAccount $waba, array $value): void
     {
-        $tenant->forceFill([
+        $team->forceFill([
             'status' => 'suspended',
             'suspended_reason' => 'partner_removed',
         ])->save();

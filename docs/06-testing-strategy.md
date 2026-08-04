@@ -9,7 +9,7 @@ Pest 4. **No test touches the network.** Every external API has a fake bound in 
 | Unit | Pest | Pure logic: money maths, CSW/FEP calculation, rate-limiter maths, segment AST → SQL, variable interpolation, state-machine transitions | high |
 | Feature | Pest + Laravel | An Action does the right thing end-to-end against a real DB | highest |
 | Contract | Pest + recorded fixtures | Our client parses real Meta/ioTec payloads correctly | one per endpoint & webhook field |
-| Isolation | Pest | Tenant boundaries hold | one per tenant-scoped model |
+| Isolation | Pest | Team boundaries hold | one per team-scoped model |
 | Browser | Pest 4 browser tests | Inbox flows work in a real browser | the critical paths only |
 | Load | k6 or artillery | Webhook ingest survives burst | before each phase exit |
 
@@ -27,21 +27,23 @@ it('replays a failed delivery without duplication')    → re-run processor, sti
 it('rejects a bad signature')                          → 401, nothing persisted
 ```
 
-### 2. Tenant isolation
+### 2. Team isolation
 
-A data provider iterating **every** model with `BelongsToTenant`:
+A data provider iterating **every** model with `BelongsToTeam`:
 
 ```
-it('never returns another tenant\'s records', function (string $model) {
-    // seed 2 tenants, act as tenant A, assert count() sees only A
-})->with('tenantScopedModels');
+it('never returns another team\'s records', function (string $model) {
+    // seed 2 teams, act as team A, assert count() sees only A
+})->with('teamScopedModels');
 ```
 
 Plus:
 ```
-it('throws when creating a record with no tenant context')
+it('throws when creating a record with no team context')
 it('enforces RLS even with a raw DB::table query')
-it('does not leak tenant context across Octane requests')
+it('does not leak team context across Octane requests')
+it('refuses a second team membership for a user')          → one team per user (D-020)
+it('reads only its own membership row before context')     → user-aware team_user policy
 ```
 
 > The RLS test is only meaningful when the test DB connection uses the non-superuser
@@ -50,14 +52,14 @@ it('does not leak tenant context across Octane requests')
 > the connected role is not a superuser before asserting isolation.
 
 That last one is the highest-value test in the suite. Simulate two sequential requests in one
-process and assert `Tenancy::current()` is null at the start of the second.
+process and assert `Teams::current()` is null at the start of the second.
 
 ### 3. Send guards cannot be bypassed
 
 ```
 it('refuses a free-form message outside the CSW')
 it('refuses marketing to a contact with revoked consent')
-it('refuses when the tenant budget cap is reached')
+it('refuses when the team budget cap is reached')
 it('respects the per-recipient 6-second gate')
 it('respects the per-WABA hourly bucket')
 it('suppresses rather than sends when the per-user marketing cap is hit')
@@ -139,11 +141,11 @@ Before each phase exit:
 
 No global percentage target. Instead, these paths require line coverage:
 webhook ingest, send guards, thread control, consent evaluation, payment state machine, usage meters,
-tenant scoping. A PR touching any of them without a test is rejected.
+team scoping. A PR touching any of them without a test is rejected.
 
 ## Seeders
 
-`DemoTenantSeeder` builds a realistic tenant: 2 numbers, 5 users, 2,000 contacts with mixed consent
+`DemoTeamSeeder` builds a realistic team: 1 number, 5 users, 2,000 contacts with mixed consent
 states, 30 conversations across all four ownership states, 12 templates spanning every status, 3
 campaigns, 40 orders with payments in every ioTec status, and CTWA referrals. This is what makes UI
 work possible before any real WABA is connected.

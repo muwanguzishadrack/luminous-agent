@@ -31,15 +31,11 @@ export default function SegmentsIndex({ segmentCount }: Props) {
     );
 }
 
-SegmentsIndex.layout = (props: {
-    currentTenant?: { slug: string } | null;
-}) => ({
+SegmentsIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Segments',
-            href: props.currentTenant
-                ? segments(props.currentTenant.slug)
-                : '/',
+            href: props.team ? segments(props.team.slug) : '/',
         },
     ],
 });

@@ -142,7 +142,7 @@ CREATE EXTENSION IF NOT EXISTS "btree_gin";
 
 `docker/postgres/init/02-roles.sql` — **required for RLS to actually be enforced locally.** The
 bootstrap user (`luminous`) is a superuser and bypasses row-level security entirely; the runtime
-app must connect as a non-superuser role or the tenant-isolation tests pass without testing
+app must connect as a non-superuser role or the team-isolation tests pass without testing
 anything (`06-testing-strategy.md` §2):
 
 ```sql
@@ -311,9 +311,9 @@ META_ES_CONFIG_ID=                    # Embedded Signup configuration ID
 META_SOLUTION_ID=                     # only if using a Multi-Partner Solution
 
 # ---- Meta Business Agent ----
-# Prefix only. The URL registered with Meta is per tenant:
-# ${MBA_CONNECTOR_BASE_URL}/{tenant} — the {tenant} segment is mandatory and must match the
-# connector token's tenant_id (05-security-multitenancy.md §3).
+# Prefix only. The URL registered with Meta is per team:
+# ${MBA_CONNECTOR_BASE_URL}/{team} — the {team} segment is mandatory and must match the
+# connector token's team_id (05-security-multitenancy.md §3).
 MBA_CONNECTOR_BASE_URL="${APP_URL}/connectors/v1"
 
 # ---- ioTec Pay ----
@@ -429,7 +429,7 @@ against the containerised app.
 | Webhook round-trip works through the tunnel to the container | The whole point |
 | Media upload lands in MinIO and is retrievable | Disk config differences |
 
-> Octane + multi-tenancy is the highest-risk pairing in this stack. Any tenant state held in a
+> Octane + multi-tenancy is the highest-risk pairing in this stack. Any team state held in a
 > singleton leaks across requests. `06-testing-strategy.md` covers the test that catches this.
 
 ---

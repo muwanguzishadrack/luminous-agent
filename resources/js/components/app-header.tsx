@@ -3,7 +3,6 @@ import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { TenantSwitcher } from '@/components/tenant-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,10 +58,10 @@ const activeItemStyles =
 
 export function AppHeader({ breadcrumbs = [] }: Props) {
     const page = usePage();
-    const { auth, currentTenant } = page.props;
+    const { auth, team } = page.props;
     const getInitials = useInitials();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
-    const dashboardUrl = currentTenant ? dashboard(currentTenant.slug) : '/';
+    const dashboardUrl = team ? dashboard(team.slug) : '/';
 
     const mainNavItems: NavItem[] = [
         {
@@ -239,8 +238,6 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                 <UserMenuContent user={auth.user} />
                             </DropdownMenuContent>
                         </DropdownMenu>
-
-                        <TenantSwitcher inHeader />
                     </div>
                 </div>
             </div>

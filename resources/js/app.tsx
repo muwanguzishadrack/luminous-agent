@@ -14,10 +14,13 @@ createInertiaApp({
         switch (true) {
             case name === 'welcome':
                 return null;
+            // Invitations share the auth layout: the invitee may have no team
+            // yet, so there is no team-prefixed sidebar to wrap them in (D-020).
             case name.startsWith('auth/'):
+            case name.startsWith('invitations/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
-            case name.startsWith('tenants/'):
+            case name.startsWith('teams/'):
                 return [AppLayout, SettingsLayout];
             default:
                 return AppLayout;

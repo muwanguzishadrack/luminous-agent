@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
- * Tenant billing ledger, append-only — balance is always SUM(amount_minor);
+ * Team billing ledger, append-only — balance is always SUM(amount_minor);
  * balance_after_minor is a cached checkpoint, never trusted alone
  * (docs/02-data-model.md §11).
  *
  * @property int $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $kind
  * @property int $amount_minor
  * @property string $currency
@@ -22,12 +22,12 @@ use Illuminate\Support\Carbon;
  * @property string|null $reference_id
  * @property string|null $description
  * @property Carbon|null $created_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  */
 #[Fillable(['kind', 'amount_minor', 'currency', 'balance_after_minor', 'reference_type', 'reference_id', 'description'])]
 class WalletEntry extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTeam;
 
     /**
      * The table only carries created_at.

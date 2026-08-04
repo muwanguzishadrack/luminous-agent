@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 
 test('email verification screen can be rendered', function () {
-    $user = User::factory()->unverified()->create();
+    $user = User::factory()->withTeam()->unverified()->create();
 
     $response = $this->actingAs($user)->get(route('verification.notice'));
 
@@ -14,8 +14,8 @@ test('email verification screen can be rendered', function () {
 });
 
 test('email can be verified', function () {
-    $user = User::factory()->unverified()->create();
-    $tenant = $user->personalTenant();
+    $user = User::factory()->withTeam()->unverified()->create();
+    $team = $user->team;
 
     Event::fake();
 
@@ -29,11 +29,11 @@ test('email can be verified', function () {
 
     Event::assertDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
-    $response->assertRedirect("/{$tenant->slug}/dashboard?verified=1");
+    $response->assertRedirect("/{$team->slug}/dashboard?verified=1");
 });
 
 test('email is not verified with invalid hash', function () {
-    $user = User::factory()->unverified()->create();
+    $user = User::factory()->withTeam()->unverified()->create();
 
     Event::fake();
 
@@ -50,7 +50,7 @@ test('email is not verified with invalid hash', function () {
 });
 
 test('email is not verified with invalid user id', function () {
-    $user = User::factory()->unverified()->create();
+    $user = User::factory()->withTeam()->unverified()->create();
 
     Event::fake();
 
@@ -67,7 +67,7 @@ test('email is not verified with invalid user id', function () {
 });
 
 test('verified user is redirected to dashboard from verification prompt', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTeam()->create();
 
     Event::fake();
 
@@ -78,8 +78,8 @@ test('verified user is redirected to dashboard from verification prompt', functi
 });
 
 test('already verified user visiting verification link is redirected without firing event again', function () {
-    $user = User::factory()->create();
-    $tenant = $user->personalTenant();
+    $user = User::factory()->withTeam()->create();
+    $team = $user->team;
 
     Event::fake();
 
@@ -90,7 +90,7 @@ test('already verified user visiting verification link is redirected without fir
     );
 
     $this->actingAs($user)->get($verificationUrl)
-        ->assertRedirect("/{$tenant->slug}/dashboard?verified=1");
+        ->assertRedirect("/{$team->slug}/dashboard?verified=1");
 
     Event::assertNotDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();

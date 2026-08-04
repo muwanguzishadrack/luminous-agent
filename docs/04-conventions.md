@@ -64,8 +64,8 @@ app/
 7. **Timestamps are `CarbonImmutable`.** Configure `Date::use(CarbonImmutable::class)`.
 8. **Queued jobs are idempotent.** Every job either has a natural key (`wamid`, `provider_id`) or
    uses `WithoutOverlapping` + a dedupe check. Assume every job runs at least twice.
-9. **Tenant context is explicit.** Never read the tenant from a global inside a job — pass
-   `tenant_id` in the payload and re-establish scope in `handle()`.
+9. **Team context is explicit.** Never read the team from a global inside a job — pass
+   `team_id` in the payload and re-establish scope in `handle()`.
 
 ### Naming
 
@@ -109,7 +109,7 @@ resources/
 │   ├── hooks/
 │   ├── lib/
 │   │   ├── utils.ts             cn()
-│   │   ├── format.ts            money, dates in tenant tz, phone
+│   │   ├── format.ts            money, dates in team tz, phone
 │   │   └── echo.ts              broadcasting client
 │   └── types/
 │       ├── generated.d.ts       # generated from PHP — never hand-edit
@@ -121,7 +121,7 @@ resources/
 
 1. **Types are generated, not written.** Use `spatie/laravel-typescript-transformer` to emit
    `generated.d.ts` from Data objects and enums. A prop type mismatch must be a compile error.
-2. **`SharedProps` are minimal.** `auth.user`, `tenant`, `permissions`, `unread_counts`, `flash`.
+2. **`SharedProps` are minimal.** `auth.user`, `team`, `permissions`, `unread_counts`, `flash`.
    Everything else is per-page. Shared props are serialised on *every* Inertia response.
 3. **Use Inertia 3 deferred props** for anything expensive (analytics panels, message history beyond
    the first page) so the shell paints immediately.
@@ -137,7 +137,7 @@ resources/
 8. **Forms use Inertia's `useForm`.** Validation errors come from Laravel; no client-side schema
    duplication except for instant UX affordances.
 9. **Every list is virtualised** past ~100 rows (conversations, contacts, campaign recipients,
-   message history). Non-negotiable for tenants with 100k contacts.
+   message history). Non-negotiable for teams with 100k contacts.
 10. **Optimistic sends.** Render the bubble immediately with `status: 'queued'`, reconcile on the
     broadcast. Show a clear failed state with a retry affordance.
 
@@ -145,7 +145,7 @@ resources/
 
 Tokens live in `@theme` in `resources/css/app.css`. No `tailwind.config.js` unless a plugin needs it.
 Define semantic tokens (`--color-brand`, `--color-inbound`, `--color-outbound`,
-`--color-ai`, `--color-warn`) so white-label theming is a token swap per tenant.
+`--color-ai`, `--color-warn`) so white-label theming is a token swap per team.
 
 ### Accessibility floor
 

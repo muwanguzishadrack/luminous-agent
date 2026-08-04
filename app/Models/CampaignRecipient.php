@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\CampaignRecipientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
  * (docs/02-data-model.md §7).
  *
  * @property int $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $campaign_id
  * @property string $contact_id
  * @property string|null $message_id
@@ -32,7 +32,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $clicked_at
  * @property Carbon|null $replied_at
  * @property Carbon|null $failed_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Campaign $campaign
  * @property-read Contact $contact
  * @property-read Message|null $message
@@ -40,7 +40,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['campaign_id', 'contact_id', 'message_id', 'wamid', 'status', 'suppression_reason', 'error_code', 'cost_minor', 'variables', 'queued_at', 'sent_at', 'delivered_at', 'read_at', 'clicked_at', 'replied_at', 'failed_at'])]
 class CampaignRecipient extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTeam;
 
     /** @use HasFactory<CampaignRecipientFactory> */
     use HasFactory;

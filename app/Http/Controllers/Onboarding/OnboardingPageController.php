@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Onboarding;
 use App\Actions\Onboarding\OnboardingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\OnboardingSession;
-use App\Support\Facades\Tenancy;
+use App\Models\WabaAccount;
+use App\Support\Facades\Teams;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,20 +19,17 @@ use Inertia\Response;
 class OnboardingPageController extends Controller
 {
     /**
-     * Display the Embedded Signup launcher with the tenant's latest session.
+     * Display the Embedded Signup launcher with the team's latest session.
      */
     public function __invoke(): Response
     {
         $session = $this->latestSession();
 
         return Inertia::render('onboarding/index', [
-            // Which workspace the number will be attached to. Onboarding is
-            // not tenant-prefixed, so it follows the *current* tenant —
-            // stating it prevents connecting a real number to the wrong one.
-            'tenant' => [
-                'name' => (string) Tenancy::currentOrFail()->name,
-                'slug' => (string) Tenancy::currentOrFail()->slug,
-            ],
+            // One WABA per team (D-020): once connected there is nothing left
+            // to onboard, and the launcher says so instead of offering a
+            // second signup that the server would refuse.
+            'connectedWabaId' => WabaAccount::query()->value('waba_id'),
             'appId' => (string) config('meta.app_id'),
             'configId' => (string) config('meta.es_config_id'),
             'graphVersion' => (string) config('meta.graph_version'),
@@ -48,19 +46,19 @@ class OnboardingPageController extends Controller
     }
 
     /**
-     * The tenant's most recent onboarding session. Ordered UUIDv7 primary
+     * The team's most recent onboarding session. Ordered UUIDv7 primary
      * keys stand in for the created_at the table deliberately lacks.
      */
     private function latestSession(): ?OnboardingSession
     {
-        $tenantId = Tenancy::currentId();
+        $teamId = Teams::currentId();
 
-        if ($tenantId === null) {
+        if ($teamId === null) {
             return null;
         }
 
         return OnboardingSession::query()
-            ->where('tenant_id', $tenantId)
+            ->where('team_id', $teamId)
             ->orderByDesc('id')
             ->first();
     }

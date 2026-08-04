@@ -17,7 +17,7 @@ return new class extends Migration
         // Doc §9 only details `products`; catalogs expanded minimally as the Meta catalog container.
         Schema::create('catalogs', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('meta_catalog_id')->nullable();
             $table->string('name');
             $table->string('sync_status')->nullable();
@@ -26,7 +26,7 @@ return new class extends Migration
 
         Schema::create('products', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('catalog_id')->constrained('catalogs');
             $table->index('catalog_id');
             $table->string('retailer_id'); // our SKU — the id used in WhatsApp product messages
@@ -42,12 +42,12 @@ return new class extends Migration
             $table->string('sync_status')->nullable();
             $table->timestampTz('last_synced_at')->nullable();
 
-            $table->unique(['tenant_id', 'retailer_id']);
+            $table->unique(['team_id', 'retailer_id']);
         });
 
         Schema::create('orders', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('contact_id')->index(); // group 4 — plain uuid
             $table->uuid('conversation_id')->nullable()->index(); // group 5 — plain uuid; api/mba orders may precede a conversation
             $table->string('reference')->unique(); // human-facing order number
@@ -68,7 +68,7 @@ return new class extends Migration
 
         Schema::create('iotec_wallets', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->nullable()->index(); // null for our own platform wallet
+            $table->uuid('team_id')->nullable()->index(); // null for our own platform wallet
             $table->uuid('iotec_wallet_id')->unique(); // ioTec's wallet id — one local row per remote wallet
             $table->string('name');
             $table->char('currency', 3);
@@ -84,7 +84,7 @@ return new class extends Migration
         // One row per ioTec transaction attempt. Status history lives in payment_events.
         Schema::create('payments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('order_id')->nullable()->constrained('orders'); // nullable = standalone collection
             $table->index('order_id');
             $table->uuid('contact_id')->nullable();
@@ -117,14 +117,14 @@ return new class extends Migration
             $table->jsonb('raw'); // last full ioTec view model
             $table->string('idempotency_key')->unique(); // guards double-submission from our own UI
 
-            $table->unique(['tenant_id', 'external_id']); // external_id unique per tenant
-            $table->index(['tenant_id', 'status']);
+            $table->unique(['team_id', 'external_id']); // external_id unique per team
+            $table->index(['team_id', 'status']);
             $table->index(['status', 'last_polled_at']); // for the poller
         });
 
         Schema::create('payment_events', function (Blueprint $table) {
             $table->id(); // append-only: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('payment_id')->constrained('payments');
             $table->index('payment_id');
             $table->string('status');

@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('waba_accounts', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->unique(); // one WABA per team (D-020)
             $table->string('waba_id')->unique(); // Meta WABA ID
             $table->string('owner_business_id'); // business portfolio ID
             $table->string('solution_id')->nullable(); // set when onboarded via a Multi-Partner Solution
@@ -35,7 +35,7 @@ return new class extends Migration
 
         Schema::create('phone_numbers', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->unique(); // one phone number per team (D-020)
             $table->foreignUuid('waba_account_id')->constrained('waba_accounts');
             $table->index('waba_account_id');
             $table->string('phone_number_id')->unique(); // Meta business phone number ID
@@ -56,7 +56,7 @@ return new class extends Migration
 
         Schema::create('meta_credentials', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('waba_account_id')->nullable()->constrained('waba_accounts');
             $table->string('type'); // enum: business|bisu|system (app-level)
             $table->text('token'); // `encrypted` cast — Laravel app-key encryption
@@ -69,16 +69,16 @@ return new class extends Migration
             $table->integer('failure_count')->default(0); // breaker after N consecutive auth failures
         });
 
-        // Doc §2: unique (tenant_id, waba_account_id, type) where revoked_at is null.
+        // Doc §2: unique (team_id, waba_account_id, type) where revoked_at is null.
         DB::statement(
             'CREATE UNIQUE INDEX meta_credentials_active_unique
-             ON meta_credentials (tenant_id, waba_account_id, type)
+             ON meta_credentials (team_id, waba_account_id, type)
              WHERE revoked_at IS NULL'
         );
 
         Schema::create('onboarding_sessions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->nullable()->index(); // null until the tenant is created
+            $table->uuid('team_id')->nullable()->index(); // null until the team is created
             $table->string('nonce')->unique(); // ties the browser session to the exchange
             $table->string('feature_type')->nullable(); // whatsapp_business_app_onboarding for Coexistence
             $table->string('es_version'); // e.g. v4

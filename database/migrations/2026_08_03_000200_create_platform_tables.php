@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('actor_type'); // user | system | mba | owner_device
             $table->uuid('actor_id')->nullable();
             $table->string('action');
@@ -27,7 +27,7 @@ return new class extends Migration
 
         Schema::create('admin_sessions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('admin_user_id')->constrained('users');
             $table->string('reason');
             $table->timestampTz('started_at');

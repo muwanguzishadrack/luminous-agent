@@ -69,7 +69,7 @@ each change isolated so one bad object does not lose the rest.
 | `template_category_update` | Meta re-categorises a template | **M3 + M8 — the price just changed** |
 | `phone_number_quality_update` | Quality rating or messaging tier change | M8 health |
 | `phone_number_name_update` | Display name approval | M0 |
-| `account_update` | `PARTNER_ADDED`, `PARTNER_APP_INSTALLED`, `PARTNER_REMOVED`, verification changes, disconnections | **M0 tenant lifecycle** |
+| `account_update` | `PARTNER_ADDED`, `PARTNER_APP_INSTALLED`, `PARTNER_REMOVED`, verification changes, disconnections | **M0 team lifecycle** |
 | `account_review_update` | WABA review decision | M8 health |
 | `account_alerts` | Policy/capability alerts | M8 health |
 | `business_capability_update` | Messaging limit / capability change | M8 health |
@@ -93,8 +93,8 @@ each change isolated so one bad object does not lose the rest.
 }
 ```
 
-`metadata.phone_number_id` is how we resolve the tenant. **If it does not match a known
-`phone_numbers` row, park the delivery as `ignored` and alert — never guess a tenant.**
+`metadata.phone_number_id` is how we resolve the team. **If it does not match a known
+`phone_numbers` row, park the delivery as `ignored` and alert — never guess a team.**
 
 ### Inbound message sub-types to handle
 
@@ -198,8 +198,8 @@ never be overridden by an import, an agent, or an API call.**
 
 | Event | Action |
 |---|---|
-| `PARTNER_ADDED` / `PARTNER_APP_INSTALLED` | Provision or reactivate the tenant; capture `waba_id`, `solution_id`, `owner_business_id` |
-| `PARTNER_REMOVED` | Suspend the tenant; inspect `disconnection_info` for reason and whether client- or system-initiated |
+| `PARTNER_ADDED` / `PARTNER_APP_INSTALLED` | Provision or reactivate the team; capture `waba_id`, `solution_id`, `owner_business_id` |
+| `PARTNER_REMOVED` | Suspend the team; inspect `disconnection_info` for reason and whether client- or system-initiated |
 | Verification / capability changes | Update `waba_accounts`, raise `health_events` |
 
 ---

@@ -13,11 +13,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * Local mirror of an ioTec wallet; tenant_id is null for the platform wallet
+ * Local mirror of an ioTec wallet; team_id is null for the platform wallet
  * (docs/02-data-model.md §9).
  *
  * @property string $id
- * @property string|null $tenant_id
+ * @property string|null $team_id
  * @property string $iotec_wallet_id
  * @property string $name
  * @property string $currency
@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $callback_header_name
  * @property string|null $callback_header_value
  * @property Carbon|null $last_synced_at
- * @property-read Tenant|null $tenant
+ * @property-read Team|null $team
  * @property-read Collection<int, Payment> $payments
  */
 #[Fillable(['iotec_wallet_id', 'name', 'currency', 'actual_balance_minor', 'available_balance_minor', 'collection_callback_url', 'disbursement_callback_url', 'callback_header_name', 'callback_header_value', 'last_synced_at'])]
@@ -70,13 +70,13 @@ class IotecWallet extends Model
     }
 
     /**
-     * Nullable by design: rows are created platform-level before any tenant
-     * context exists (docs/02 §3) — hence no BelongsToTenant trait.
+     * Nullable by design: rows are created platform-level before any team
+     * context exists (docs/02 §3) — hence no BelongsToTeam trait.
      *
-     * @return BelongsTo<Tenant, $this>
+     * @return BelongsTo<Team, $this>
      */
-    public function tenant(): BelongsTo
+    public function team(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Team::class);
     }
 }

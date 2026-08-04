@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Notification;
 test('sends verification notification', function () {
     Notification::fake();
 
-    $user = User::factory()->unverified()->create();
+    $user = User::factory()->withTeam()->unverified()->create();
 
     $this->actingAs($user)
         ->post(route('verification.send'))
@@ -19,7 +19,7 @@ test('sends verification notification', function () {
 test('does not send verification notification if email is verified', function () {
     Notification::fake();
 
-    $user = User::factory()->create();
+    $user = User::factory()->withTeam()->create();
 
     $this->actingAs($user)
         ->post(route('verification.send'))

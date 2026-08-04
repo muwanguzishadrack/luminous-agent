@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +11,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $mba_agent_id
  * @property string $kind
  * @property array<string, mixed> $request
@@ -19,13 +19,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $score
  * @property Carbon $run_at
  * @property string|null $run_by
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read MbaAgent $mbaAgent
  */
 #[Fillable(['mba_agent_id', 'kind', 'request', 'result', 'score', 'run_at', 'run_by'])]
 class MbaEval extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.

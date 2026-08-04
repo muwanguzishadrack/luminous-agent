@@ -2,10 +2,10 @@
 
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
-use App\Http\Controllers\Tenants\TenantController;
-use App\Http\Controllers\Tenants\TenantInvitationController;
-use App\Http\Controllers\Tenants\TenantMemberController;
-use App\Http\Middleware\EnsureTenantMembership;
+use App\Http\Controllers\Teams\TeamController;
+use App\Http\Controllers\Teams\TeamInvitationController;
+use App\Http\Controllers\Teams\TeamMemberController;
+use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
@@ -27,20 +27,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
 
-    Route::get('settings/tenants', [TenantController::class, 'index'])->name('tenants.index');
-    Route::post('settings/tenants', [TenantController::class, 'store'])->name('tenants.store');
+    // Singular: a user has at most one team (D-020), so the team-settings
+    // screen names no team — the membership resolves it.
+    Route::middleware(EnsureTeamMembership::class)->group(function () {
+        Route::get('settings/team', [TeamController::class, 'edit'])->name('team.edit');
+        Route::patch('settings/team', [TeamController::class, 'update'])->name('team.update');
+        Route::delete('settings/team', [TeamController::class, 'destroy'])->name('team.destroy');
 
-    Route::middleware(EnsureTenantMembership::class)->group(function () {
-        Route::get('settings/tenants/{tenant}', [TenantController::class, 'edit'])->name('tenants.edit');
-        Route::patch('settings/tenants/{tenant}', [TenantController::class, 'update'])->name('tenants.update');
-        Route::delete('settings/tenants/{tenant}', [TenantController::class, 'destroy'])->name('tenants.destroy');
-        Route::post('settings/tenants/{tenant}/switch', [TenantController::class, 'switch'])->name('tenants.switch');
-        Route::delete('settings/tenants/{tenant}/leave', [TenantController::class, 'leave'])->name('tenants.leave');
+        Route::patch('settings/team/members/{user}', [TeamMemberController::class, 'update'])->name('team.members.update');
+        Route::delete('settings/team/members/{user}', [TeamMemberController::class, 'destroy'])->name('team.members.destroy');
 
-        Route::patch('settings/tenants/{tenant}/members/{user}', [TenantMemberController::class, 'update'])->name('tenants.members.update');
-        Route::delete('settings/tenants/{tenant}/members/{user}', [TenantMemberController::class, 'destroy'])->name('tenants.members.destroy');
-
-        Route::post('settings/tenants/{tenant}/invitations', [TenantInvitationController::class, 'store'])->name('tenants.invitations.store');
-        Route::delete('settings/tenants/{tenant}/invitations/{invitation}', [TenantInvitationController::class, 'destroy'])->name('tenants.invitations.destroy');
+        Route::post('settings/team/invitations', [TeamInvitationController::class, 'store'])->name('team.invitations.store');
+        Route::delete('settings/team/invitations/{invitation}', [TeamInvitationController::class, 'destroy'])->name('team.invitations.destroy');
     });
 });

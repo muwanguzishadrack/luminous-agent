@@ -10,18 +10,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { destroy as destroyMember } from '@/routes/tenants/members';
-import type { Tenant, TenantMember } from '@/types';
+import { destroy as destroyMember } from '@/routes/team/members';
+import type { TeamMember } from '@/types';
 
 type Props = {
-    tenant: Tenant;
-    member: TenantMember | null;
+    member: TeamMember | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 };
 
 export default function RemoveMemberModal({
-    tenant,
     member,
     open,
     onOpenChange,
@@ -33,7 +31,7 @@ export default function RemoveMemberModal({
             return;
         }
 
-        router.visit(destroyMember([tenant.slug, member.id]), {
+        router.visit(destroyMember(member.id), {
             onStart: () => setProcessing(true),
             onFinish: () => setProcessing(false),
             onSuccess: () => onOpenChange(false),
@@ -44,10 +42,10 @@ export default function RemoveMemberModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Remove tenant member</DialogTitle>
+                    <DialogTitle>Remove team member</DialogTitle>
                     <DialogDescription>
                         Are you sure you want to remove{' '}
-                        <strong>{member?.name}</strong> from this tenant?
+                        <strong>{member?.name}</strong> from this team?
                     </DialogDescription>
                 </DialogHeader>
 

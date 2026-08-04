@@ -3,8 +3,8 @@ import { dashboard, login } from '@/routes';
 import { register } from '@/routes';
 
 export default function Welcome() {
-    const { auth, currentTenant } = usePage().props;
-    const dashboardUrl = currentTenant ? dashboard(currentTenant.slug) : '/';
+    const { auth, team } = usePage().props;
+    const dashboardUrl = team ? dashboard(team.slug) : '/';
 
     return (
         <>

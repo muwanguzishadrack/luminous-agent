@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
  * Meta Business Agent — one per phone number (docs/02-data-model.md §8).
  *
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $phone_number_id
  * @property array<string, mixed> $eligibility
  * @property string|null $vertical
@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed> $skills
  * @property string $allowlist_mode
  * @property Carbon|null $last_synced_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read PhoneNumber $phoneNumber
  * @property-read Collection<int, MbaAllowlistEntry> $allowlistEntries
  * @property-read Collection<int, MbaKnowledgeSource> $knowledgeSources
@@ -38,7 +38,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['phone_number_id', 'eligibility', 'vertical', 'tos_client_accepted_at', 'onboarded_at', 'enabled', 'enabled_at', 'disabled_at', 'settings', 'skills', 'allowlist_mode', 'last_synced_at'])]
 class MbaAgent extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.

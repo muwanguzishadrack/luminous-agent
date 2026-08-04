@@ -7,7 +7,7 @@ use App\Support\AuditLog;
 use RuntimeException;
 
 /**
- * Step 7 — the business is live: tenant status active, session complete,
+ * Step 7 — the business is live: team status active, session complete,
  * audit entry (docs/modules/m0-onboarding.md §1 step 7).
  */
 class CompleteOnboarding extends OnboardingStep
@@ -19,13 +19,13 @@ class CompleteOnboarding extends OnboardingStep
 
     public function handle(OnboardingSession $session, OnboardingInput $input): void
     {
-        $tenant = $session->tenant;
+        $team = $session->team;
 
-        if ($tenant === null) {
-            throw new RuntimeException('The onboarding session has no tenant to activate.');
+        if ($team === null) {
+            throw new RuntimeException('The onboarding session has no team to activate.');
         }
 
-        $tenant->update(['status' => 'active']);
+        $team->update(['status' => 'active']);
 
         $this->advance($session, OnboardingStatus::COMPLETE);
 

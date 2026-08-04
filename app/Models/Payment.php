@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\PaymentDirection;
 use App\Enums\PaymentStatus;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  * payment_events (docs/02-data-model.md §9).
  *
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string|null $order_id
  * @property string|null $contact_id
  * @property PaymentDirection $direction
@@ -51,7 +51,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $last_polled_at
  * @property array<string, mixed> $raw
  * @property string $idempotency_key
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Order|null $order
  * @property-read Contact|null $contact
  * @property-read IotecWallet $wallet
@@ -60,7 +60,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['order_id', 'contact_id', 'direction', 'provider', 'external_id', 'provider_id', 'vendor_transaction_id', 'category', 'wallet_id', 'currency', 'amount_minor', 'payer', 'payer_name', 'payee', 'payee_name', 'status', 'status_code', 'status_message', 'vendor', 'payment_channel', 'transaction_charge_minor', 'vendor_charge_minor', 'total_charge_minor', 'card_redirect_url', 'redirect_url', 'requested_at', 'processed_at', 'last_polled_at', 'raw', 'idempotency_key'])]
 class Payment extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<PaymentFactory> */
     use HasFactory;

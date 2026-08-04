@@ -40,7 +40,7 @@ POST /webhooks/meta/{app}
 | 2 | **Never trust ordering** | A `read` status can arrive before `delivered`, and a status can arrive for a wamid we have never seen. Create stub message rows. |
 | 3 | **Idempotent on `wamid`** | Every message write is an UPSERT |
 | 4 | **Isolate each change** | One malformed change must not lose its siblings |
-| 5 | **Never guess a tenant** | Unresolvable `phone_number_id` → `status = ignored` + alert |
+| 5 | **Never guess a team** | Unresolvable `phone_number_id` → `status = ignored` + alert |
 | 6 | **Everything replayable** | 30-day raw retention; `webhook:replay` command |
 | 7 | **Status is append-only** | Write `message_events` always; advance `messages.status` only on a legal forward transition |
 
@@ -137,7 +137,7 @@ messages webhook → media id → GET /{media-id} → url
 Outbound: upload once, reuse `meta_media_id` until `meta_expires_at` (~30 days), then re-upload from
 our own copy automatically.
 
-Serving: private bucket, short-lived signed URLs, tenant-scoped. Never public objects.
+Serving: private bucket, short-lived signed URLs, team-scoped. Never public objects.
 
 ---
 
@@ -160,7 +160,7 @@ Serving: private bucket, short-lived signed URLs, tenant-scoped. Never public ob
 
 ## 7. Realtime
 
-Laravel Reverb. Private channels: `tenant.{id}.inbox`, `conversation.{id}`.
+Laravel Reverb. Private channels: `team.{id}.inbox`, `conversation.{id}`.
 
 | Event | Client behaviour |
 |---|---|
@@ -177,8 +177,8 @@ Rule from `04-conventions.md`: realtime augments Inertia. Anything beyond a triv
 
 ## 8. Search
 
-Meilisearch via Scout. Indexes: `messages` (body, contact name, labels, tenant_id, occurred_at),
-`contacts`. Filters are pushed into Meilisearch filter expressions with `tenant_id` **always**
+Meilisearch via Scout. Indexes: `messages` (body, contact name, labels, team_id, occurred_at),
+`contacts`. Filters are pushed into Meilisearch filter expressions with `team_id` **always**
 applied server-side — never from a client-supplied parameter.
 
 ---

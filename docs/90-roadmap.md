@@ -14,15 +14,15 @@ Buildable today with zero external accounts.
 | 0.1 | Laravel 13 + Inertia 3 + React 19 + TS 7 + Tailwind 4 + shadcn/ui scaffold, Herd-served |
 | 0.2 | `docker/compose.dev.yml` running Postgres 17, Redis 8, Meilisearch, MinIO, Mailpit |
 | 0.3 | Full migration set for all 56 tables (`02-data-model.md`), running clean from empty |
-| 0.4 | Models, enums, DTOs, policies; `BelongsToTenant` + `TenantScope` + Postgres RLS |
-| 0.5 | Auth, tenant/user/role plumbing, invitations |
+| 0.4 | Models, enums, DTOs, policies; `BelongsToTeam` + `TeamScope` + Postgres RLS |
+| 0.5 | Auth, team/user/role plumbing, invitations |
 | 0.6 | `GraphClient` and `IotecClient` with **fakes**, bound in tests |
-| 0.7 | `DemoTenantSeeder` — 2 numbers, 5 users, 2k contacts, 30 conversations across all 4 ownership states, 12 templates, 3 campaigns, 40 orders, payments in every ioTec status, CTWA referrals |
+| 0.7 | `DemoTeamSeeder` — 1 number, 5 users, 2k contacts, 30 conversations across all 4 ownership states, 12 templates, 3 campaigns, 40 orders, payments in every ioTec status, CTWA referrals |
 | 0.8 | App shell: navigation, layouts, theme tokens, empty states |
 | 0.9 | CI: Pint, PHPStan L8, Pest, `tsc --noEmit`, ESLint, build |
 | 0.10 | Typescript type generation from PHP Data objects |
 
-**Exit criteria:** migrations run clean; demo seeder produces a browsable UI; tenant-isolation test
+**Exit criteria:** migrations run clean; demo seeder produces a browsable UI; team-isolation test
 suite green including the Octane leak test; CI green.
 
 ---
@@ -31,7 +31,7 @@ suite green including the Octane leak test; CI green.
 
 | Module | Scope |
 |---|---|
-| M0 | Embedded Signup v4, token vault, phone registration, webhook subscription, asset sync, payment-readiness gate, tenant lifecycle, RBAC, audit log, **webhook ingest reliability** |
+| M0 | Embedded Signup v4, token vault, phone registration, webhook subscription, asset sync, payment-readiness gate, team lifecycle, RBAC, audit log, **webhook ingest reliability** |
 | M1 | Full inbox: tri-source ingest, ownership state machine, CSW/FEP timers, all message types, media pipeline, assignment, labels, notes, canned replies, presence, search, realtime |
 | M2 | Contacts, identifiers, **consent ledger + consent_states + send guard**, keyword handling, segments, import/export/merge, customer context object |
 | M3 | Template CRUD, category cost warning, library, variable mapping, status/quality/category webhooks, multi-language groups |
@@ -66,7 +66,7 @@ The differentiator. **Ship the customer-context Connector with the agent, never 
 | Thread control: take over / hand back, guarded, audited |
 | Agent Event triggers, rate-limited and individually switchable |
 | Agent Test + Agent Eval; containment rate and cost per resolution |
-| Token spend meter (estimate-labelled) and per-tenant hard cap |
+| Token spend meter (estimate-labelled) and per-team hard cap |
 | **Empirical answers to U1–U6** recorded in `92-decisions.md` |
 
 **Exit criteria:** M5 AC1–9. In particular: the allowlist canary works, `customer-context` never
@@ -88,7 +88,7 @@ returns an undeclared field, and U1–U6 are answered rather than assumed.
 3. Duplicated callbacks credit exactly once.
 4. `usage_meters` reconciles to `pricing_analytics` within 1%.
 5. Zero wallet balance blocks campaign starts but never blocks inbound processing.
-6. The Oct 1 projector produces a real per-tenant delta.
+6. The Oct 1 projector produces a real per-team delta.
 
 > **Timing note:** the Oct 1, 2026 pricing change lands during or just after this phase. The projector
 > should ship as early in Phase 3 as possible — ideally by mid-September, once Meta publishes the
@@ -131,7 +131,7 @@ within 5s (M0 AC3); declined history sharing completes gracefully (M0 AC4).
 Every phase must preserve these. A PR that breaks one does not merge.
 
 1. No dropped webhooks.
-2. No cross-tenant read, at any layer.
+2. No cross-team read, at any layer.
 3. Consent enforced inside the send Action.
 4. `usage_meters`, `consents`, `payment_events`, `message_events`, `wallet_entries` are append-only.
 5. Every external-API fact in code is backed by a line in `reference/`.

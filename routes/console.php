@@ -1,11 +1,11 @@
 <?php
 
-use App\Models\TenantInvitation;
+use App\Models\TeamInvitation;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::call(function () {
-    TenantInvitation::query()
+    TeamInvitation::query()
         ->whereNotNull('expires_at')
         ->where('expires_at', '<', now())
         ->delete();
-})->daily()->description('Delete expired tenant invitations');
+})->daily()->description('Delete expired team invitations');

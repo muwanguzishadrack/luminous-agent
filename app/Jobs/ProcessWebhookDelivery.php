@@ -3,10 +3,10 @@
 namespace App\Jobs;
 
 use App\Enums\WebhookDeliveryStatus;
-use App\Models\Tenant;
+use App\Models\Team;
 use App\Models\WebhookDelivery;
 use App\Services\Webhooks\FieldHandlerRegistry;
-use App\Support\Facades\Tenancy;
+use App\Support\Facades\Teams;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -17,11 +17,11 @@ use Throwable;
  * each change isolated so one bad object never loses its siblings
  * (docs/modules/m1-team-inbox.md §1).
  *
- * Tenant resolution goes through the SECURITY DEFINER resolve_webhook_tenant
+ * Team resolution goes through the SECURITY DEFINER resolve_webhook_team
  * function (owned by the BYPASSRLS migrator role) — the webhook arrives with
- * no tenant context and the lookup is inherently cross-tenant (docs/05 §1,
+ * no team context and the lookup is inherently cross-team (docs/05 §1,
  * "dangerous paths"). Once resolved, the change is handled under normal
- * tenant context so RLS applies to every write.
+ * team context so RLS applies to every write.
  */
 class ProcessWebhookDelivery implements ShouldQueue
 {
@@ -64,7 +64,7 @@ class ProcessWebhookDelivery implements ShouldQueue
                         'exception' => $e::class,
                     ];
                 } finally {
-                    Tenancy::forget();
+                    Teams::forget();
                 }
             }
         }
@@ -102,42 +102,42 @@ class ProcessWebhookDelivery implements ShouldQueue
             return 'parked';
         }
 
-        $tenant = $this->resolveTenant($entry, $value);
+        $team = $this->resolveTeam($entry, $value);
 
-        if ($tenant === null) {
-            // Never guess a tenant (docs/m1 §1 rule 5). Park and let the
+        if ($team === null) {
+            // Never guess a team (docs/m1 §1 rule 5). Park and let the
             // delivery record carry the evidence.
             throw new \RuntimeException(
-                "Unresolvable tenant for field [{$field}] (waba ".($entry['id'] ?? '?').')',
+                "Unresolvable team for field [{$field}] (waba ".($entry['id'] ?? '?').')',
             );
         }
 
-        Tenancy::initialize($tenant);
+        Teams::initialize($team);
 
-        $handler->handle($tenant, $value, $entry);
+        $handler->handle($team, $value, $entry);
 
         return 'handled';
     }
 
     /**
-     * Resolve the owning tenant from metadata.phone_number_id, falling back
+     * Resolve the owning team from metadata.phone_number_id, falling back
      * to the entry-level WABA id.
      *
      * @param  array<string, mixed>  $entry
      * @param  array<string, mixed>  $value
      */
-    private function resolveTenant(array $entry, array $value): ?Tenant
+    private function resolveTeam(array $entry, array $value): ?Team
     {
         // Explicit ::text casts: without them Postgres sees `unknown` argument
         // types and cannot resolve the overload.
-        $tenantId = DB::selectOne(
-            'select resolve_webhook_tenant(?::text, ?::text) as tenant_id',
+        $teamId = DB::selectOne(
+            'select resolve_webhook_team(?::text, ?::text) as team_id',
             [
                 $value['metadata']['phone_number_id'] ?? null,
                 $entry['id'] ?? null,
             ],
-        )->tenant_id ?? null;
+        )->team_id ?? null;
 
-        return $tenantId === null ? null : Tenant::query()->whereKey((string) $tenantId)->first();
+        return $teamId === null ? null : Team::query()->whereKey((string) $teamId)->first();
     }
 }

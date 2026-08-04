@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MediaScanStatus;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string|null $meta_media_id
  * @property string $sha256
  * @property string $mime_type
@@ -26,13 +26,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $transcript
  * @property MediaScanStatus $scan_status
  * @property Carbon|null $meta_expires_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Collection<int, Message> $messages
  */
 #[Fillable(['meta_media_id', 'sha256', 'mime_type', 'size_bytes', 'filename', 'disk', 'path', 'thumb_path', 'duration_ms', 'transcript', 'scan_status', 'meta_expires_at'])]
 class Media extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table associated with the model.

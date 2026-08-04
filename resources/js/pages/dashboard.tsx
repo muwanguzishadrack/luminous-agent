@@ -13,10 +13,10 @@ import {
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { dashboard } from '@/routes';
 import { index as onboardingIndex } from '@/routes/onboarding';
-import type { DashboardInvitation } from '@/types';
+import type { PendingInvitation } from '@/types';
 
 type Props = {
-    pendingInvitations?: DashboardInvitation[];
+    pendingInvitations?: PendingInvitation[];
     hasWhatsAppNumbers?: boolean;
 };
 
@@ -45,9 +45,9 @@ export default function Dashboard({
                                 <CardTitle>Connect WhatsApp</CardTitle>
                             </div>
                             <CardDescription>
-                                No number is connected to this workspace yet.
-                                Link a WhatsApp Business number to start
-                                receiving and sending messages.
+                                No number is connected to this team yet. Link a
+                                WhatsApp Business number to start receiving and
+                                sending messages.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -78,13 +78,11 @@ export default function Dashboard({
     );
 }
 
-Dashboard.layout = (props: { currentTenant?: { slug: string } | null }) => ({
+Dashboard.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Dashboard',
-            href: props.currentTenant
-                ? dashboard(props.currentTenant.slug)
-                : '/',
+            href: props.team ? dashboard(props.team.slug) : '/',
         },
     ],
 });

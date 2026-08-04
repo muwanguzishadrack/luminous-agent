@@ -1,7 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
-import TenantInvitationAlert from '@/components/tenant-invitation-alert';
+import TeamInvitationAlert from '@/components/team-invitation-alert';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
-import type { TenantInvitationContext } from '@/types';
+import type { TeamInvitationContext } from '@/types';
 
 type Props = {
     passwordRules: string;
-    tenantInvitation?: TenantInvitationContext | null;
+    teamInvitation?: TeamInvitationContext | null;
 };
 
-export default function Register({ passwordRules, tenantInvitation }: Props) {
+export default function Register({ passwordRules, teamInvitation }: Props) {
     return (
         <>
             <Head title="Register" />
@@ -28,11 +28,21 @@ export default function Register({ passwordRules, tenantInvitation }: Props) {
             >
                 {({ processing, errors }) => (
                     <>
-                        {tenantInvitation && (
-                            <TenantInvitationAlert
-                                invitation={tenantInvitation}
-                                action="Register"
-                            />
+                        {teamInvitation && (
+                            <>
+                                <TeamInvitationAlert
+                                    invitation={teamInvitation}
+                                    action="Register"
+                                />
+                                {/* Registering against an invitation joins
+                                    that team instead of creating one — a user
+                                    belongs to exactly one team (D-020). */}
+                                <input
+                                    type="hidden"
+                                    name="invitation"
+                                    value={teamInvitation.code}
+                                />
+                            </>
                         )}
 
                         <div className="grid gap-6">
@@ -115,16 +125,16 @@ export default function Register({ passwordRules, tenantInvitation }: Props) {
                             Already have an account?{' '}
                             <TextLink
                                 href={
-                                    tenantInvitation
+                                    teamInvitation
                                         ? login.url({
                                               query: {
                                                   invitation:
-                                                      tenantInvitation.code,
+                                                      teamInvitation.code,
                                               },
                                           })
                                         : login()
                                 }
-                                data-test="tenant-invitation-login-link"
+                                data-test="team-invitation-login-link"
                                 tabIndex={6}
                             >
                                 Log in

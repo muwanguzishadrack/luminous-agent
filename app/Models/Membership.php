@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\TenantRole;
+use App\Enums\TeamRole;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -10,15 +10,15 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $user_id
- * @property TenantRole $role
+ * @property TeamRole $role
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read User $user
  */
-#[Fillable(['tenant_id', 'user_id', 'role', 'phone_number_ids', 'status', 'invited_by', 'invited_at', 'joined_at'])]
+#[Fillable(['team_id', 'user_id', 'role', 'status', 'invited_by', 'invited_at', 'joined_at'])]
 class Membership extends Pivot
 {
     /**
@@ -26,7 +26,7 @@ class Membership extends Pivot
      *
      * @var string
      */
-    protected $table = 'tenant_user';
+    protected $table = 'team_user';
 
     /**
      * Indicates if the IDs are auto-incrementing.
@@ -36,13 +36,13 @@ class Membership extends Pivot
     public $incrementing = true;
 
     /**
-     * Get the tenant that the membership belongs to.
+     * Get the team that the membership belongs to.
      *
-     * @return BelongsTo<Tenant, $this>
+     * @return BelongsTo<Team, $this>
      */
-    public function tenant(): BelongsTo
+    public function team(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Team::class);
     }
 
     /**
@@ -63,8 +63,7 @@ class Membership extends Pivot
     protected function casts(): array
     {
         return [
-            'role' => TenantRole::class,
-            'phone_number_ids' => 'array',
+            'role' => TeamRole::class,
             'invited_at' => 'datetime',
             'joined_at' => 'datetime',
         ];

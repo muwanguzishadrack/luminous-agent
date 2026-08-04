@@ -215,11 +215,11 @@ the layer it lacks:
 
 | Our role | Delivered via |
 |---|---|
-| **Context provider** | `GET /connectors/v1/{tenant}/customer-context?wa_id=…` returning lifecycle stage, LTV, open orders, entitlements, language, consent state, active campaign |
+| **Context provider** | `GET /connectors/v1/{team}/customer-context?wa_id=…` returning lifecycle stage, LTV, open orders, entitlements, language, consent state, active campaign |
 | **Action broker** | Write tools: log intent, create ticket, update order, book slot — so AI conversations produce CRM records instead of vanishing |
 | **Consent & compliance gate** | MBA does not know our consent ledger; we enforce it |
 | **Handover orchestration** | AI ⇄ queue ⇄ human state machine, skills routing, SLA |
-| **Cost governance** | Token spend visibility, per-tenant budgets |
+| **Cost governance** | Token spend visibility, per-team budgets |
 | **Cross-channel identity** | One customer across WhatsApp, orders, payments, ads |
 
 Connector contract details in [../modules/m5-meta-business-agent.md](../modules/m5-meta-business-agent.md).

@@ -5,12 +5,13 @@ namespace App\Actions\Onboarding;
 use App\Enums\MetaCredentialType;
 use App\Models\MetaCredential;
 use App\Models\OnboardingSession;
+use App\Models\WabaAccount;
 use App\Services\Meta\GraphClient;
 use App\Support\AuditLog;
 use RuntimeException;
 
 /**
- * Step 1 — exchange the one-time ES code for a per-tenant business token
+ * Step 1 — exchange the one-time ES code for a per-team business token
  * and vault it (docs/modules/m0-onboarding.md §1 step 1, §2).
  *
  * NEVER log or expose the code or the token — only token_last4 ever leaves
@@ -27,6 +28,8 @@ class ExchangeSignupCode extends OnboardingStep
 
     public function handle(OnboardingSession $session, OnboardingInput $input): void
     {
+        $this->assertTeamHasNoOtherWaba($session);
+
         if ($session->code_exchanged_at !== null) {
             // Already exchanged on an earlier attempt — the code is spent;
             // just move the session forward.
@@ -49,7 +52,7 @@ class ExchangeSignupCode extends OnboardingStep
             throw new RuntimeException('The Embedded Signup code exchange returned no access_token.');
         }
 
-        // One active business credential per tenant: rotate the token in
+        // One active business credential per team: rotate the token in
         // place rather than inserting a competing row
         // (meta_credentials_active_unique).
         $credential = MetaCredential::query()
@@ -75,5 +78,27 @@ class ExchangeSignupCode extends OnboardingStep
             'credential_id' => $credential->id,
             'token_last4' => $credential->token_last4,
         ]);
+    }
+
+    /**
+     * One WABA per team (D-020). A second Embedded Signup is refused before a
+     * token is exchanged — never merged, never silently overwritten. Re-running
+     * against the *same* WABA is a resume and stays allowed.
+     *
+     * @throws RuntimeException
+     */
+    private function assertTeamHasNoOtherWaba(OnboardingSession $session): void
+    {
+        $existing = WabaAccount::query()->first();
+
+        if ($existing === null || $existing->waba_id === $session->waba_id) {
+            return;
+        }
+
+        throw new RuntimeException(
+            "This workspace is already connected to WhatsApp Business Account {$existing->waba_id}. ".
+            'A workspace holds one WhatsApp Business Account and one number — disconnect the current one, '.
+            'or use a separate login for the other business.',
+        );
     }
 }

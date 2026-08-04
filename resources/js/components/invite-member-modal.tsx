@@ -20,18 +20,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { store as storeInvitation } from '@/routes/tenants/invitations';
-import type { RoleOption, Tenant } from '@/types';
+import { store as storeInvitation } from '@/routes/team/invitations';
+import type { RoleOption } from '@/types';
 
 type Props = {
-    tenant: Tenant;
     availableRoles: RoleOption[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
 };
 
 export default function InviteMemberModal({
-    tenant,
     availableRoles,
     open,
     onOpenChange,
@@ -51,18 +49,16 @@ export default function InviteMemberModal({
             <DialogContent>
                 <Form
                     key={String(open)}
-                    {...storeInvitation.form(tenant.slug)}
+                    {...storeInvitation.form()}
                     className="space-y-6"
                     onSuccess={() => onOpenChange(false)}
                 >
                     {({ errors, processing }) => (
                         <>
                             <DialogHeader>
-                                <DialogTitle>
-                                    Invite a tenant member
-                                </DialogTitle>
+                                <DialogTitle>Invite a team member</DialogTitle>
                                 <DialogDescription>
-                                    Send an invitation to join this tenant.
+                                    Send an invitation to join this team.
                                 </DialogDescription>
                             </DialogHeader>
 

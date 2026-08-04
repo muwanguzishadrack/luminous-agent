@@ -46,7 +46,7 @@ Since **July 1, 2025** Meta charges **per message**, not per conversation
 |---|---|---|
 | **Aug 1, 2026** | MBA charging goes live (per token) | Token meter in M8; label as estimate until Meta's MBA analytics ship |
 | **Sept 1, 2026** | Meta publishes Oct 1 rates, incl. service messages | Update rate card; re-run the impact projector |
-| **Oct 1, 2026** | All non-template messages chargeable; utility-in-CSW no longer free | Cost projector shipped **before** this date; tenant comms prepared |
+| **Oct 1, 2026** | All non-template messages chargeable; utility-in-CSW no longer free | Cost projector shipped **before** this date; team comms prepared |
 | **Oct 15, 2026** | **Embedded Signup v2 removed** | We build on v4 only — no action if we never use v2 |
 | **Dec 1, 2025** (past) | Analytics lookback cut from 10 years to 1 year | Daily snapshots into `analytics_snapshots` |
 | Quarterly | Jan 1 / Apr 1 / Jul 1 / Oct 1 — the only days Meta may change rates | Scheduled rate-card review task |

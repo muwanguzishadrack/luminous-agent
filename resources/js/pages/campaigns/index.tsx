@@ -36,15 +36,11 @@ export default function CampaignsIndex({
     );
 }
 
-CampaignsIndex.layout = (props: {
-    currentTenant?: { slug: string } | null;
-}) => ({
+CampaignsIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Campaigns',
-            href: props.currentTenant
-                ? campaigns(props.currentTenant.slug)
-                : '/',
+            href: props.team ? campaigns(props.team.slug) : '/',
         },
     ],
 });

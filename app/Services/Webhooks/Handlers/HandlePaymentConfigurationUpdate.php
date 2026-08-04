@@ -2,7 +2,7 @@
 
 namespace App\Services\Webhooks\Handlers;
 
-use App\Models\Tenant;
+use App\Models\Team;
 use App\Models\WabaAccount;
 use App\Services\Webhooks\FieldHandler;
 use App\Support\AuditLog;
@@ -14,7 +14,7 @@ use App\Support\AuditLog;
  */
 class HandlePaymentConfigurationUpdate implements FieldHandler
 {
-    public function handle(Tenant $tenant, array $value, array $entry): void
+    public function handle(Team $team, array $value, array $entry): void
     {
         $waba = WabaAccount::query()
             ->where('waba_id', (string) ($entry['id'] ?? ''))

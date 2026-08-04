@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Enums\ConsentScope;
 use App\Enums\ConsentSource;
 use App\Enums\ConsentState as ConsentStateEnum;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\ConsentStateFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -19,21 +19,21 @@ use Illuminate\Support\Carbon;
  * send guard reads (docs/02-data-model.md §4).
  *
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $contact_id
  * @property ConsentScope $scope
  * @property ConsentStateEnum $state
  * @property ConsentSource $source
  * @property Carbon $occurred_at
  * @property int $consent_id
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Contact $contact
  * @property-read Consent $consent
  */
 #[Fillable(['contact_id', 'scope', 'state', 'source', 'occurred_at', 'consent_id'])]
 class ConsentState extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<ConsentStateFactory> */
     use HasFactory;

@@ -33,15 +33,11 @@ export default function ContactsIndex({ contactCount, labelCount }: Props) {
     );
 }
 
-ContactsIndex.layout = (props: {
-    currentTenant?: { slug: string } | null;
-}) => ({
+ContactsIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Contacts',
-            href: props.currentTenant
-                ? contacts(props.currentTenant.slug)
-                : '/',
+            href: props.team ? contacts(props.team.slug) : '/',
         },
     ],
 });

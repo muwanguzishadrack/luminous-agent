@@ -10,18 +10,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { destroy as destroyInvitation } from '@/routes/tenants/invitations';
-import type { Tenant, TenantInvitation } from '@/types';
+import { destroy as destroyInvitation } from '@/routes/team/invitations';
+import type { TeamInvitation } from '@/types';
 
 type Props = {
-    tenant: Tenant;
-    invitation: TenantInvitation | null;
+    invitation: TeamInvitation | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 };
 
 export default function CancelInvitationModal({
-    tenant,
     invitation,
     open,
     onOpenChange,
@@ -33,7 +31,7 @@ export default function CancelInvitationModal({
             return;
         }
 
-        router.visit(destroyInvitation([tenant.slug, invitation.code]), {
+        router.visit(destroyInvitation(invitation.code), {
             onStart: () => setProcessing(true),
             onFinish: () => setProcessing(false),
             onSuccess: () => onOpenChange(false),

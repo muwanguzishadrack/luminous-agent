@@ -23,15 +23,11 @@ export default function AnalyticsIndex() {
     );
 }
 
-AnalyticsIndex.layout = (props: {
-    currentTenant?: { slug: string } | null;
-}) => ({
+AnalyticsIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Analytics',
-            href: props.currentTenant
-                ? analytics(props.currentTenant.slug)
-                : '/',
+            href: props.team ? analytics(props.team.slug) : '/',
         },
     ],
 });

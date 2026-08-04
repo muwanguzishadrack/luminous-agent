@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TemplateCategory;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\TemplateFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $waba_account_id
  * @property string|null $template_group_id
  * @property string|null $meta_template_id
@@ -35,7 +35,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $paused_until
  * @property Carbon|null $last_synced_at
  * @property Carbon|null $deleted_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read WabaAccount $wabaAccount
  * @property-read TemplateGroup|null $templateGroup
  * @property-read Collection<int, TemplateEvent> $events
@@ -45,7 +45,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['waba_account_id', 'template_group_id', 'meta_template_id', 'name', 'language', 'category', 'sub_type', 'status', 'quality_score', 'rejected_reason', 'components', 'variable_map', 'ttl_seconds', 'library_template_name', 'paused_until', 'last_synced_at'])]
 class Template extends Model
 {
-    use BelongsToTenant, HasUuids, SoftDeletes;
+    use BelongsToTeam, HasUuids, SoftDeletes;
 
     /** @use HasFactory<TemplateFactory> */
     use HasFactory;

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
  * Per-contact click tracking for wrapped URL buttons (docs/02-data-model.md §7).
  *
  * @property int $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $campaign_id
  * @property string $contact_id
  * @property int $button_index
@@ -22,14 +22,14 @@ use Illuminate\Support\Carbon;
  * @property int $click_count
  * @property string|null $user_agent
  * @property string|null $ip_hash
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Campaign $campaign
  * @property-read Contact $contact
  */
 #[Fillable(['campaign_id', 'contact_id', 'button_index', 'token', 'target_url', 'clicked_at', 'click_count', 'user_agent', 'ip_hash'])]
 class CampaignClick extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTeam;
 
     /**
      * The table carries no created_at / updated_at pair.

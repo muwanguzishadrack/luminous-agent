@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,14 +11,14 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $contact_id
  * @property string|null $conversation_id
  * @property string $user_id
  * @property string $body
  * @property array<int, mixed> $mentions
  * @property Carbon|null $created_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Contact $contact
  * @property-read Conversation|null $conversation
  * @property-read User $user
@@ -26,7 +26,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['contact_id', 'conversation_id', 'user_id', 'body', 'mentions'])]
 class Note extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table only carries created_at.

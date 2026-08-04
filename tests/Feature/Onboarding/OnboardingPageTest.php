@@ -3,25 +3,25 @@
 use App\Models\PhoneNumber;
 use App\Models\User;
 use App\Models\WabaAccount;
-use App\Support\Facades\Tenancy;
+use App\Support\Facades\Teams;
 use Database\Factories\OnboardingSessionFactory;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
  * The onboarding UI surface (docs/modules/m0-onboarding.md §7): the
- * Embedded Signup launcher page and the tenant's numbers screen.
+ * Embedded Signup launcher page and the team's numbers screen.
  */
 test('guests are redirected to the login page', function (string $routeName) {
     $this->get(route($routeName))->assertRedirect(route('login'));
-})->with(['onboarding.index', 'numbers.index']);
+})->with(['onboarding.index', 'whatsapp.show']);
 
-test('the onboarding page renders the embedded signup config for the current tenant', function () {
+test('the onboarding page renders the embedded signup config for the current team', function () {
     config()->set('meta.app_id', '918140000000000');
     config()->set('meta.es_config_id', '112233445566778');
     config()->set('meta.graph_version', 'v26.0');
 
-    $user = User::factory()->create();
+    $user = User::factory()->withTeam()->create();
 
     $this->actingAs($user)
         ->get(route('onboarding.index'))
@@ -37,7 +37,7 @@ test('the onboarding page renders the embedded signup config for the current ten
 test('the app secret never appears in the onboarding page props', function () {
     config()->set('meta.app_secret', 'super-secret-value');
 
-    $user = User::factory()->create();
+    $user = User::factory()->withTeam()->create();
 
     $this->actingAs($user)
         ->get(route('onboarding.index'))
@@ -46,16 +46,16 @@ test('the app secret never appears in the onboarding page props', function () {
 });
 
 test('the latest onboarding session is exposed with its failure verbatim and no nonce', function () {
-    $user = User::factory()->create();
-    Tenancy::initialize($user->currentTenant);
+    $user = User::factory()->withTeam()->create();
+    Teams::initialize($user->team);
 
     OnboardingSessionFactory::new()->create([
         'id' => (string) Str::uuid7(now()->subMinute()),
-        'tenant_id' => $user->currentTenant->id,
+        'team_id' => $user->team->id,
     ]);
 
     $failed = OnboardingSessionFactory::new()->finished()->create([
-        'tenant_id' => $user->currentTenant->id,
+        'team_id' => $user->team->id,
         'status' => 'failed',
         'failure' => [
             'step' => 'register_phone_number',
@@ -77,11 +77,11 @@ test('the latest onboarding session is exposed with its failure verbatim and no 
 });
 
 test('a started session exposes its nonce so the browser flow can resume', function () {
-    $user = User::factory()->create();
-    Tenancy::initialize($user->currentTenant);
+    $user = User::factory()->withTeam()->create();
+    Teams::initialize($user->team);
 
     $session = OnboardingSessionFactory::new()->create([
-        'tenant_id' => $user->currentTenant->id,
+        'team_id' => $user->team->id,
     ]);
 
     $this->actingAs($user)
@@ -92,15 +92,15 @@ test('a started session exposes its nonce so the browser flow can resume', funct
             ->where('session.nonce', $session->nonce));
 });
 
-test('another tenant session is never surfaced', function () {
-    $alice = User::factory()->create();
-    Tenancy::initialize($alice->currentTenant);
+test('another team session is never surfaced', function () {
+    $alice = User::factory()->withTeam()->create();
+    Teams::initialize($alice->team);
 
     OnboardingSessionFactory::new()->create([
-        'tenant_id' => $alice->currentTenant->id,
+        'team_id' => $alice->team->id,
     ]);
 
-    $mallory = User::factory()->create();
+    $mallory = User::factory()->withTeam()->create();
 
     $this->actingAs($mallory)
         ->get(route('onboarding.index'))
@@ -108,9 +108,9 @@ test('another tenant session is never surfaced', function () {
         ->assertInertia(fn (Assert $page) => $page->where('session', null));
 });
 
-test('settings numbers lists the tenant wabas and numbers', function () {
-    $user = User::factory()->create();
-    Tenancy::initialize($user->currentTenant);
+test('settings whatsapp shows the team single waba and number', function () {
+    $user = User::factory()->withTeam()->create();
+    Teams::initialize($user->team);
 
     $wabaAccount = WabaAccount::factory()->create([
         'name' => 'Acme Stores',
@@ -128,66 +128,79 @@ test('settings numbers lists the tenant wabas and numbers', function () {
         ]);
 
     $this->actingAs($user)
-        ->get(route('numbers.index'))
+        ->get(route('whatsapp.show'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/numbers')
-            ->has('wabaAccounts', 1)
-            ->where('wabaAccounts.0.name', 'Acme Stores')
-            ->where('wabaAccounts.0.wabaId', $wabaAccount->waba_id)
-            ->where('wabaAccounts.0.paymentReady', false)
-            ->has('wabaAccounts.0.phoneNumbers', 1)
-            ->where('wabaAccounts.0.phoneNumbers.0.id', $number->id)
-            ->where('wabaAccounts.0.phoneNumbers.0.displayPhoneNumber', '+256 700 000 001')
-            ->where('wabaAccounts.0.phoneNumbers.0.verifiedName', 'Acme Stores')
-            ->where('wabaAccounts.0.phoneNumbers.0.qualityRating', 'YELLOW')
-            ->where('wabaAccounts.0.phoneNumbers.0.messagingLimitTier', 'TIER_1K')
-            ->where('wabaAccounts.0.phoneNumbers.0.throughputLevel', 'STANDARD')
-            ->where('wabaAccounts.0.phoneNumbers.0.isOnBizApp', true)
-            ->where('wabaAccounts.0.phoneNumbers.0.pinSet', false));
+            ->component('settings/whatsapp')
+            ->where('wabaAccount.name', 'Acme Stores')
+            ->where('wabaAccount.wabaId', $wabaAccount->waba_id)
+            ->where('wabaAccount.paymentReady', false)
+            ->where('phoneNumber.id', $number->id)
+            ->where('phoneNumber.displayPhoneNumber', '+256 700 000 001')
+            ->where('phoneNumber.verifiedName', 'Acme Stores')
+            ->where('phoneNumber.qualityRating', 'YELLOW')
+            ->where('phoneNumber.messagingLimitTier', 'TIER_1K')
+            ->where('phoneNumber.throughputLevel', 'STANDARD')
+            ->where('phoneNumber.isOnBizApp', true)
+            ->where('phoneNumber.pinSet', false));
 });
 
-test('settings numbers renders an empty list when nothing is connected', function () {
-    $user = User::factory()->create();
+test('settings whatsapp renders nothing connected when the team has no waba', function () {
+    $user = User::factory()->withTeam()->create();
 
     $this->actingAs($user)
-        ->get(route('numbers.index'))
+        ->get(route('whatsapp.show'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/numbers')
-            ->has('wabaAccounts', 0));
+            ->component('settings/whatsapp')
+            ->where('wabaAccount', null)
+            ->where('phoneNumber', null));
 });
 
-test('the dashboard flags whether the tenant has connected numbers', function () {
-    $user = User::factory()->create();
+test('the dashboard flags whether the team has a connected number', function () {
+    $user = User::factory()->withTeam()->create();
 
     $this->actingAs($user)
-        ->get(route('dashboard'))
+        ->get(route('dashboard', ['team' => $user->team->slug]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('hasWhatsAppNumbers', false));
 
-    Tenancy::initialize($user->currentTenant);
+    Teams::initialize($user->team);
     PhoneNumber::factory()->create();
 
     $this->actingAs($user)
-        ->get(route('dashboard'))
+        ->get(route('dashboard', ['team' => $user->team->slug]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('hasWhatsAppNumbers', true));
 });
 
 test('the onboarding page names the workspace the number will belong to', function () {
-    $user = User::factory()->create();
-    $tenant = $user->currentTenant;
-    $tenant->forceFill(['name' => 'Acme Trading'])->save();
+    $user = User::factory()->withTeam('Acme Trading')->create();
 
     $this->actingAs($user)
         ->get(route('onboarding.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('onboarding/index')
-            ->where('tenant.name', 'Acme Trading')
-            ->where('tenant.slug', $tenant->slug),
+            ->where('team.name', 'Acme Trading')
+            ->where('team.slug', $user->team->slug)
+            ->where('connectedWabaId', null),
+        );
+});
+
+test('the onboarding page reports a team that is already connected', function () {
+    $user = User::factory()->withTeam()->create();
+    Teams::initialize($user->team);
+
+    $waba = WabaAccount::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('onboarding.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('onboarding/index')
+            ->where('connectedWabaId', $waba->waba_id),
         );
 });

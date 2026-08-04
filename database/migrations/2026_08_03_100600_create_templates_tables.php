@@ -18,14 +18,14 @@ return new class extends Migration
         // resolve the right language per contact.
         Schema::create('template_group', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('key');
             $table->string('name');
         });
 
         Schema::create('templates', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('waba_account_id')->index(); // group 2 — plain uuid
             $table->foreignUuid('template_group_id')->nullable()->constrained('template_group');
             $table->string('meta_template_id')->nullable(); // null until submitted
@@ -51,7 +51,7 @@ return new class extends Migration
         // _components_update / template_category_update webhooks.
         Schema::create('template_events', function (Blueprint $table) {
             $table->id(); // high-volume append-only: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('template_id')->constrained('templates');
             $table->index('template_id');
             $table->string('event');

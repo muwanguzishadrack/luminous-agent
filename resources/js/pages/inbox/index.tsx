@@ -33,11 +33,11 @@ export default function InboxIndex({ conversationCount, messageCount }: Props) {
     );
 }
 
-InboxIndex.layout = (props: { currentTenant?: { slug: string } | null }) => ({
+InboxIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Inbox',
-            href: props.currentTenant ? inbox(props.currentTenant.slug) : '/',
+            href: props.team ? inbox(props.team.slug) : '/',
         },
     ],
 });

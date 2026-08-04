@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('campaigns', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('phone_number_id')->index(); // group 2 — plain uuid
             $table->string('name');
             // Doc says "template_id or template_group_id" — modelled as two nullable
@@ -41,7 +41,7 @@ return new class extends Migration
 
         Schema::create('campaign_recipients', function (Blueprint $table) {
             $table->id(); // high-volume append-only: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('campaign_id')->constrained('campaigns');
             $table->uuid('contact_id')->index(); // group 4 — plain uuid
             $table->uuid('message_id')->nullable()->index(); // group 5 — plain uuid
@@ -66,7 +66,7 @@ return new class extends Migration
         // Per-contact click tracking for wrapped URL buttons (M4 §7).
         Schema::create('campaign_clicks', function (Blueprint $table) {
             $table->id(); // high-volume append-only: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('campaign_id')->constrained('campaigns');
             $table->uuid('contact_id')->index(); // group 4 — plain uuid
             $table->smallInteger('button_index'); // which URL button
@@ -83,7 +83,7 @@ return new class extends Migration
         // Doc §7 defines sequences/* tersely ("Drip journeys") — expanded minimally.
         Schema::create('sequences', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('name');
             $table->string('status'); // enum: draft|active|paused|archived (app-level)
             $table->jsonb('settings')->default('{}');
@@ -91,7 +91,7 @@ return new class extends Migration
 
         Schema::create('sequence_steps', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('sequence_id')->constrained('sequences');
             $table->smallInteger('position');
             $table->string('kind'); // send_template|wait|branch|tag|assign|exit_if_replied|exit_if_ai_resolved|webhook
@@ -102,7 +102,7 @@ return new class extends Migration
 
         Schema::create('sequence_enrollments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('sequence_id')->constrained('sequences');
             $table->uuid('contact_id')->index(); // group 4 — plain uuid
             $table->uuid('current_step_id')->nullable();

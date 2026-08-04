@@ -16,7 +16,7 @@ Docs root: <https://developers.facebook.com/documentation/business-messaging/wha
 | Item | Value |
 |---|---|
 | Header | `Authorization: Bearer <token>` |
-| Token type we use | **Business token** (per-tenant), obtained via Embedded Signup code exchange |
+| Token type we use | **Business token** (per-team), obtained via Embedded Signup code exchange |
 | Permissions | `whatsapp_business_management`, `whatsapp_business_messaging` |
 | Tech Provider rule | Use **business tokens exclusively**. System tokens are only for Solution Partners sharing a credit line. |
 | MBA exception | Meta Business Agent APIs use a **BISU token** — a different credential. See `meta-business-agent.md`. |
@@ -130,12 +130,16 @@ limits, TTL override, tap-target override, Template Library.
 
 ## 5. Phone numbers & account assets
 
+Field lists, value sets, and profile constraints in this section were verified **2026-08-04** against
+Graph `v26.0` via the Meta Developer Tools MCP. They are what `/settings/whatsapp`
+(`modules/m0-onboarding.md` §7) renders and writes.
+
 | Operation | Endpoint |
 |---|---|
 | List numbers | `GET /{waba-id}/phone_numbers` |
 | Number detail | `GET /{phone-number-id}?fields=…` |
-| Useful fields | `verified_name`, `code_verification_status`, `display_phone_number`, `quality_rating`, `platform_type`, `throughput`, `is_on_biz_app`, `webhook_configuration` |
 | Register | `POST /{phone-number-id}/register` (`messaging_product`, `pin`) |
+| Set two-step PIN | `POST /{phone-number-id}` (`pin`) — sets a **new** PIN; the current PIN is not required via the API (only via WhatsApp Manager). This is the escape hatch for `133005` when a client has forgotten theirs |
 | Deregister | `POST /{phone-number-id}/deregister` |
 | Request code | `POST /{phone-number-id}/request_code` |
 | Verify code | `POST /{phone-number-id}/verify_code` |
@@ -146,7 +150,64 @@ limits, TTL override, tap-target override, Template Library.
 | Conversational components | Conversational Automation API (ice breakers, commands) |
 | QR codes | `/{phone-number-id}/message_qrdls` |
 
+### Number fields — `GET /{phone-number-id}?fields=…`
+
+| Field | Values |
+|---|---|
+| `display_phone_number` | as Meta formats it, e.g. `+256 762 850388` |
+| `verified_name` | string |
+| `quality_rating` | `GREEN` \| `YELLOW` \| `RED` \| `NA` |
+| `code_verification_status` | **`VERIFIED` \| `UNVERIFIED` only** — two-step verification state |
+| `name_status` | `APPROVED` \| `AVAILABLE_WITHOUT_REVIEW` \| `DECLINED` \| `EXPIRED` \| `PENDING_REVIEW` \| `NONE` — display-name review state |
+| `status` | `CONNECTED`, … |
+| `throughput{level}` | `STANDARD` (80 mps) \| `HIGH` (1,000 mps) \| `NOT_APPLICABLE` |
+| `platform_type` | `CLOUD_API` \| `ON_PREMISE` \| `NOT_APPLICABLE` |
+| `is_on_biz_app` | bool — **true = Coexistence** |
+| `messaging_limit_tier` | `TIER_50` \| `TIER_250` \| `TIER_1K` \| `TIER_10K` \| `TIER_100K` \| `TIER_UNLIMITED` — legacy, see §7 |
+| `webhook_configuration` | per-number override |
+
+> **`code_verification_status` and `name_status` are different fields and must never be conflated.**
+> `EXPIRED` is a `name_status` value (the display-name certificate lapsed); it is not a possible
+> value of `code_verification_status`. Render them as two rows with two labels.
+
 `is_on_biz_app = true` **and** `platform_type = CLOUD_API` identifies a **Coexistence** number.
+
+WABA-level (`GET /{waba-id}`): `id`, `name`, `account_review_status`, `business_verification_status`,
+`timezone_id`, `message_template_namespace`.
+
+### Business profile — `GET|POST /{phone-number-id}/whatsapp_business_profile`
+
+GET `?fields=about,address,description,email,profile_picture_url,websites,vertical`.
+POST requires `messaging_product: "whatsapp"` in the body on **every** write.
+
+| Param | Constraint |
+|---|---|
+| `about` | 1–139 chars, non-empty. Emoji must be Java/JS-escaped unicode. No markdown; links render as plain text |
+| `address` | ≤ 256 chars |
+| `description` | ≤ 512 chars |
+| `email` | valid address, ≤ 128 chars |
+| `websites` | **max 2**, ≤ 256 chars each, each **must include `http://` or `https://`** |
+| `vertical` | empty string, or one of the 21 values below |
+| `profile_picture_handle` | write-only; a handle from the **Resumable Upload API** — not a URL and not a direct upload |
+
+The read side returns `profile_picture_url`, the write side takes `profile_picture_handle`. The
+write response is `{"success": true}` with no echo of the saved values, so re-GET after every save.
+
+The 21 `vertical` values: `ALCOHOL`, `APPAREL`, `AUTO`, `BEAUTY`, `EDU`, `ENTERTAIN`, `EVENT_PLAN`,
+`FINANCE`, `GOVT`, `GROCERY`, `HEALTH`, `HOTEL`, `NONPROFIT`, `ONLINE_GAMBLING`, `OTC_DRUGS`,
+`OTHER`, `PHYSICAL_GAMBLING`, `PROF_SERVICES`, `RESTAURANT`, `RETAIL`, `TRAVEL`.
+
+> These are **business-profile** verticals. They are not MBA's five supported verticals
+> (`92-decisions.md` D-018) — different list, different purpose.
+
+### Deregister
+
+`POST /{phone-number-id}/deregister`, with two hard limits:
+
+- **Not permitted for a Coexistence number** (`is_on_biz_app: true`). The client disconnects from the
+  WhatsApp Business app instead (*Settings → Account → Business Platform → Disconnect*), which fires
+  `account_update` / `PARTNER_REMOVED`. Any disconnect UI must branch on `is_on_biz_app`.
+- A number cannot be deleted if it was used to send paid messages in the last 30 days.
 
 ---
 
@@ -168,7 +229,7 @@ Granularity: `HALF_HOUR` / `DAY(ILY)` / `MONTH(LY)`.
 `pricing_analytics` dimensions: `COUNTRY`, `PHONE`, `PRICING_CATEGORY`, `PRICING_TYPE`, `TIER`.
 
 > `COST` is **not** returned for WABAs sharing a Solution Partner credit line. As a Tech Provider our
-> tenants pay Meta directly, so cost should be present — but handle its absence.
+> clients pay Meta directly, so cost should be present — but handle its absence.
 
 Because of the 1-year cap, snapshot into `analytics_snapshots` daily and never rely on Meta for
 historical reporting.
@@ -237,6 +298,8 @@ The Cloud API has **no idempotency key**. Our guarantees come from our own schem
 
 - <https://developers.facebook.com/documentation/business-messaging/whatsapp/get-started>
 - <https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number/message-api>
+- <https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-phone-number> — number fields, register/deregister, two-step PIN (§5, re-verified 2026-08-04 via Meta Developer Tools MCP on `v26.0`)
+- <https://developers.facebook.com/documentation/business-messaging/whatsapp/reference/whatsapp-business-profile> — business profile params, limits, and the 21 verticals (§5, same verification)
 - <https://developers.facebook.com/documentation/business-messaging/whatsapp/about-the-platform>
 - <https://developers.facebook.com/documentation/business-messaging/whatsapp/analytics>
 - <https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing>

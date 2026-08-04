@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('ctwa_referrals', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('contact_id')->index(); // group 4 — plain uuid
             $table->uuid('conversation_id')->index(); // group 5 — plain uuid
             $table->string('message_wamid'); // the first inbound message carrying the referral
@@ -36,7 +36,7 @@ return new class extends Migration
         // What we report back to Meta (Conversions API).
         Schema::create('conversions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('contact_id')->index(); // group 4 — plain uuid
             $table->uuid('order_id')->nullable()->index(); // group 9 — plain uuid
             $table->string('event_name'); // enum: Purchase|Lead|AddToCart|InitiateCheckout (app-level)

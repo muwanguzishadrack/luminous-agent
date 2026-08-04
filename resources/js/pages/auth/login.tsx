@@ -1,7 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
-import TenantInvitationAlert from '@/components/tenant-invitation-alert';
+import TeamInvitationAlert from '@/components/team-invitation-alert';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -11,26 +11,26 @@ import { Spinner } from '@/components/ui/spinner';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import type { TenantInvitationContext } from '@/types';
+import type { TeamInvitationContext } from '@/types';
 
 type Props = {
     status?: string;
     canResetPassword: boolean;
-    tenantInvitation?: TenantInvitationContext | null;
+    teamInvitation?: TeamInvitationContext | null;
 };
 
 export default function Login({
     status,
     canResetPassword,
-    tenantInvitation,
+    teamInvitation,
 }: Props) {
     return (
         <>
             <Head title="Log in" />
 
-            {tenantInvitation && (
-                <TenantInvitationAlert
-                    invitation={tenantInvitation}
+            {teamInvitation && (
+                <TeamInvitationAlert
+                    invitation={teamInvitation}
                     action="Log in"
                 />
             )}
@@ -108,7 +108,7 @@ export default function Login({
                             <TextLink
                                 href={register({
                                     query: {
-                                        invitation: tenantInvitation?.code,
+                                        invitation: teamInvitation?.code,
                                     },
                                 })}
                                 data-test="register-link"

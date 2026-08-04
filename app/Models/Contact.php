@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $wa_id
  * @property string $phone_e164
  * @property string|null $profile_name
@@ -35,7 +35,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $undeliverable_at
  * @property array<string, mixed> $custom_fields
  * @property Carbon|null $deleted_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read User|null $owner
  * @property-read Collection<int, ContactIdentifier> $identifiers
  * @property-read Collection<int, Consent> $consents
@@ -49,7 +49,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['wa_id', 'phone_e164', 'profile_name', 'display_name', 'locale', 'lifecycle_stage', 'owner_id', 'source', 'first_seen_at', 'last_inbound_at', 'last_outbound_at', 'lifetime_value', 'orders_count', 'is_blocked', 'undeliverable_at', 'custom_fields'])]
 class Contact extends Model
 {
-    use BelongsToTenant, HasUuids, SoftDeletes;
+    use BelongsToTeam, HasUuids, SoftDeletes;
 
     /** @use HasFactory<ContactFactory> */
     use HasFactory;

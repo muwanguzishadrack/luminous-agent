@@ -80,6 +80,39 @@ class FakeGraphClient implements GraphClient
         ]);
     }
 
+    public function businessProfile(string $phoneNumberId): array
+    {
+        return $this->record('GET', "{$phoneNumberId}/whatsapp_business_profile", [], fallback: [
+            'data' => [['messaging_product' => 'whatsapp']],
+        ]);
+    }
+
+    public function updateBusinessProfile(string $phoneNumberId, array $fields): array
+    {
+        // Mirrors HttpGraphClient: messaging_product is always on the wire, so
+        // the recorded payload proves it (docs/reference §5).
+        return $this->record('POST', "{$phoneNumberId}/whatsapp_business_profile", [
+            'messaging_product' => 'whatsapp',
+            ...$fields,
+        ], fallback: ['success' => true]);
+    }
+
+    public function deregister(string $phoneNumberId): array
+    {
+        return $this->record('POST', "{$phoneNumberId}/deregister", [], fallback: ['success' => true]);
+    }
+
+    public function uploadResumable(string $contents, string $mimeType, string $fileName): string
+    {
+        $handle = $this->record('POST', 'uploads', [
+            'file_name' => $fileName,
+            'file_type' => $mimeType,
+            'file_length' => strlen($contents),
+        ], fallback: ['h' => 'fake-upload-handle-'.Str::random(12)]);
+
+        return (string) ($handle['h'] ?? '');
+    }
+
     /**
      * @param  array<string, mixed>  $payload
      * @param  array<string, mixed>  $fallback

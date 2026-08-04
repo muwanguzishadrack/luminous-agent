@@ -44,8 +44,9 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'currentTenant' => fn () => $user?->currentTenant ? $user->toUserTenant($user->currentTenant) : null,
-            'tenants' => fn () => $user?->toUserTenants(includeCurrent: true) ?? [],
+            // The user's single team (D-020). Null only for a user who was
+            // removed from theirs.
+            'team' => fn () => ($team = $user?->team) ? $user->toUserTeam($team) : null,
         ];
     }
 }

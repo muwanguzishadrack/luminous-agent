@@ -7,7 +7,7 @@ use App\Services\Meta\Exceptions\CredentialMissing;
 use App\Services\Meta\Exceptions\CredentialRevoked;
 use App\Services\Meta\Exceptions\GraphApiException;
 use App\Services\Meta\GraphClient;
-use App\Support\Facades\Tenancy;
+use App\Support\Facades\Teams;
 use Tests\Fakes\FakeGraphClient;
 
 /**
@@ -15,8 +15,8 @@ use Tests\Fakes\FakeGraphClient;
  * 3 consecutive 190/401 → revoked_at, typed exception, reconnect prompt.
  */
 beforeEach(function () {
-    $user = User::factory()->create();
-    Tenancy::initialize($user->currentTenant);
+    $user = User::factory()->withTeam()->create();
+    Teams::initialize($user->team);
 });
 
 test('the resolver returns a working business client and stamps last_used_at', function () {

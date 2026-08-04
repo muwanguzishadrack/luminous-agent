@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\WabaAccountFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -10,11 +10,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $waba_id
  * @property string $owner_business_id
  * @property string|null $solution_id
@@ -29,8 +30,8 @@ use Illuminate\Support\Carbon;
  * @property bool $payment_ready
  * @property Carbon|null $onboarded_at
  * @property Carbon|null $offboarded_at
- * @property-read Tenant $tenant
- * @property-read Collection<int, PhoneNumber> $phoneNumbers
+ * @property-read Team $team
+ * @property-read PhoneNumber|null $phoneNumber
  * @property-read Collection<int, MetaCredential> $metaCredentials
  * @property-read Collection<int, Template> $templates
  * @property-read Collection<int, AnalyticsSnapshot> $analyticsSnapshots
@@ -38,7 +39,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['waba_id', 'owner_business_id', 'solution_id', 'name', 'timezone_id', 'currency', 'review_status', 'account_status', 'business_verification_status', 'portfolio_messaging_limit', 'is_subscribed', 'payment_ready', 'onboarded_at', 'offboarded_at'])]
 class WabaAccount extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<WabaAccountFactory> */
     use HasFactory;
@@ -51,13 +52,15 @@ class WabaAccount extends Model
     public $timestamps = false;
 
     /**
-     * Get the phone numbers on this WABA.
+     * Get the number bound to this WABA. Meta's WABA may carry several
+     * numbers; we bind exactly the one the client onboarded, because a team
+     * holds one number (D-020). The rest are deliberately not modelled.
      *
-     * @return HasMany<PhoneNumber, $this>
+     * @return HasOne<PhoneNumber, $this>
      */
-    public function phoneNumbers(): HasMany
+    public function phoneNumber(): HasOne
     {
-        return $this->hasMany(PhoneNumber::class);
+        return $this->hasOne(PhoneNumber::class);
     }
 
     /**

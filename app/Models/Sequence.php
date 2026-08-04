@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -13,18 +13,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Drip journey (docs/02-data-model.md §7).
  *
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $name
  * @property string $status
  * @property array<string, mixed> $settings
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Collection<int, SequenceStep> $steps
  * @property-read Collection<int, SequenceEnrollment> $enrollments
  */
 #[Fillable(['name', 'status', 'settings'])]
 class Sequence extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.

@@ -2,11 +2,11 @@
 
 use App\Enums\WebhookDeliveryStatus;
 use App\Jobs\ProcessWebhookDelivery;
-use App\Models\Tenant;
+use App\Models\Team;
 use App\Models\WabaAccount;
 use App\Models\WebhookDelivery;
 use App\Services\Webhooks\FieldHandlerRegistry;
-use App\Support\Facades\Tenancy;
+use App\Support\Facades\Teams;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 
@@ -83,7 +83,7 @@ test('a valid delivery is persisted raw and acked with a queued job', function (
     $delivery = WebhookDelivery::sole();
     expect($delivery->status)->toBe(WebhookDeliveryStatus::Pending)
         ->and($delivery->payload['entry'][0]['changes'][0]['field'])->toBe('messages')
-        ->and($delivery->tenant_id)->toBeNull();
+        ->and($delivery->team_id)->toBeNull();
 });
 
 test('a duplicate delivery is a no-op ack, not a second row', function () {
@@ -102,7 +102,7 @@ test('a duplicate delivery is a no-op ack, not a second row', function () {
     Queue::assertPushed(ProcessWebhookDelivery::class, 1);
 });
 
-test('an unhandled field with an unresolvable tenant is parked as ignored, never guessed', function () {
+test('an unhandled field with an unresolvable team is parked as ignored, never guessed', function () {
     $post = signedPost(metaFixture('messages/text_inbound.json'));
 
     $this->call('POST', $post['uri'], [], [], [], [
@@ -110,7 +110,7 @@ test('an unhandled field with an unresolvable tenant is parked as ignored, never
         'HTTP_X_HUB_SIGNATURE_256' => $post['headers']['X-Hub-Signature-256'],
     ], $post['body'])->assertOk();
 
-    // messages has no handler yet (M1) — the change parks without a tenant.
+    // messages has no handler yet (M1) — the change parks without a team.
     (new ProcessWebhookDelivery(WebhookDelivery::sole()->id))
         ->handle(app(FieldHandlerRegistry::class));
 
@@ -120,14 +120,14 @@ test('an unhandled field with an unresolvable tenant is parked as ignored, never
 });
 
 test('a malformed change does not lose its siblings', function () {
-    $tenant = Tenant::factory()->create();
-    Tenancy::initialize($tenant);
+    $team = Team::factory()->create();
+    Teams::initialize($team);
     WabaAccount::factory()->create(['waba_id' => '102290129340398']);
-    Tenancy::forget();
+    Teams::forget();
 
     $payload = json_decode(metaFixture('account_update/partner_removed.json'), true);
-    // Prepend a failing sibling: a handled field on a WABA no tenant owns —
-    // tenant resolution refuses to guess and the change fails.
+    // Prepend a failing sibling: a handled field on a WABA no team owns —
+    // team resolution refuses to guess and the change fails.
     array_unshift($payload['entry'], [
         'id' => '999999999999999',
         'changes' => [['field' => 'account_update', 'value' => ['event' => 'PARTNER_REMOVED']]],
@@ -146,16 +146,16 @@ test('a malformed change does not lose its siblings', function () {
     // The good sibling processed despite the failing one, and the failure is
     // recorded on the delivery (partial, with per-change evidence).
     $delivery = WebhookDelivery::sole();
-    expect($tenant->fresh()->status)->toBe('suspended')
+    expect($team->fresh()->status)->toBe('suspended')
         ->and($delivery->status)->toBe(WebhookDeliveryStatus::Partial)
         ->and($delivery->error)->toHaveKey('0.0');
 });
 
-test('a PARTNER_REMOVED account_update suspends the tenant within one processing cycle', function () {
-    $tenant = Tenant::factory()->create(['status' => 'active']);
-    Tenancy::initialize($tenant);
+test('a PARTNER_REMOVED account_update suspends the team within one processing cycle', function () {
+    $team = Team::factory()->create(['status' => 'active']);
+    Teams::initialize($team);
     $waba = WabaAccount::factory()->create(['waba_id' => '102290129340398']);
-    Tenancy::forget();
+    Teams::forget();
 
     $post = signedPost(metaFixture('account_update/partner_removed.json'));
     $this->call('POST', $post['uri'], [], [], [], [
@@ -166,18 +166,18 @@ test('a PARTNER_REMOVED account_update suspends the tenant within one processing
     (new ProcessWebhookDelivery(WebhookDelivery::sole()->id))
         ->handle(app(FieldHandlerRegistry::class));
 
-    Tenancy::initialize($tenant);
-    expect($tenant->fresh()->status)->toBe('suspended')
-        ->and($tenant->fresh()->suspended_reason)->toBe('partner_removed')
+    Teams::initialize($team);
+    expect($team->fresh()->status)->toBe('suspended')
+        ->and($team->fresh()->suspended_reason)->toBe('partner_removed')
         ->and($waba->fresh()->is_subscribed)->toBeFalse()
         ->and(DB::table('audit_logs')->where('action', 'waba.account_update')->count())->toBe(1);
 });
 
 test('replaying a processed delivery does not duplicate its effects', function () {
-    $tenant = Tenant::factory()->create(['status' => 'active']);
-    Tenancy::initialize($tenant);
+    $team = Team::factory()->create(['status' => 'active']);
+    Teams::initialize($team);
     WabaAccount::factory()->create(['waba_id' => '102290129340398']);
-    Tenancy::forget();
+    Teams::forget();
 
     $post = signedPost(metaFixture('account_update/partner_removed.json'));
     $server = [

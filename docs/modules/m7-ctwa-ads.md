@@ -31,7 +31,7 @@ Handling, in the inbound handler:
 2. Set `contacts.source = 'ctwa'` on first touch (never overwrite a later touch — keep first-touch
    attribution and record subsequent referrals as additional rows).
 3. **Open the 72-hour free entry point window**: `conversations.fep_expires_at = now + 72h`.
-4. Apply the tenant's CTWA routing rules: assign, label, enroll in a sequence, or leave to MBA.
+4. Apply the team's CTWA routing rules: assign, label, enroll in a sequence, or leave to MBA.
 5. Emit `CtwaLeadArrived` for automations.
 
 `ctwa_clid` is the join key for Conversions API attribution and must be preserved for the life of the
@@ -48,7 +48,7 @@ contact — without it, Meta cannot attribute a later purchase to the ad.
 | What is still charged | **Meta Business Agent tokens** — never free |
 | Sources | Click-to-WhatsApp ads and Facebook page call-to-action buttons |
 
-This is real money. A tenant who works CTWA leads inside 72 hours pays nothing for delivery; one who
+This is real money. A team that works CTWA leads inside 72 hours pays nothing for delivery; one that
 follows up on day four pays marketing rates. So:
 
 - The conversation shows a **"Free window — 71h left"** chip, visually distinct from the CSW chip.
@@ -82,7 +82,7 @@ Implementation:
 - Include `ctwa_clid` from `ctwa_referrals` as the attribution signal.
 - Queue `analytics`, retry with backoff, store the API response.
 - Never block a customer-facing flow on a conversions call.
-- A tenant toggle plus per-event toggles, because some clients will not want purchase values shared.
+- A team toggle plus per-event toggles, because some clients will not want purchase values shared.
 
 Also worth reporting on behalf of Coexistence clients, who commonly run CTWA ads — Meta explicitly
 recommends it.

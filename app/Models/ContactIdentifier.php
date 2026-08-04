@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -14,20 +14,20 @@ use Illuminate\Support\Carbon;
  * (docs/02-data-model.md §4).
  *
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $contact_id
  * @property string $kind
  * @property string $value
  * @property bool $is_primary
  * @property Carbon|null $verified_at
  * @property Carbon|null $retired_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Contact $contact
  */
 #[Fillable(['contact_id', 'kind', 'value', 'is_primary', 'verified_at', 'retired_at'])]
 class ContactIdentifier extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.

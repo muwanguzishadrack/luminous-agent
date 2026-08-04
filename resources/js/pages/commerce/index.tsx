@@ -33,15 +33,11 @@ export default function CommerceIndex({ productCount, orderCount }: Props) {
     );
 }
 
-CommerceIndex.layout = (props: {
-    currentTenant?: { slug: string } | null;
-}) => ({
+CommerceIndex.layout = (props: { team?: { slug: string } | null }) => ({
     breadcrumbs: [
         {
             title: 'Commerce',
-            href: props.currentTenant
-                ? commerce(props.currentTenant.slug)
-                : '/',
+            href: props.team ? commerce(props.team.slug) : '/',
         },
     ],
 });

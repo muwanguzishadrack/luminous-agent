@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OrderStatus;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -16,7 +16,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $contact_id
  * @property string|null $conversation_id
  * @property string $reference
@@ -33,7 +33,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $cancelled_at
  * @property string|null $notes
  * @property array<string, mixed> $meta
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Contact $contact
  * @property-read Conversation|null $conversation
  * @property-read Collection<int, Payment> $payments
@@ -42,7 +42,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['contact_id', 'conversation_id', 'reference', 'source', 'origin_wamid', 'items', 'subtotal_minor', 'shipping_minor', 'discount_minor', 'total_minor', 'currency', 'status', 'paid_at', 'cancelled_at', 'notes', 'meta'])]
 class Order extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<OrderFactory> */
     use HasFactory;

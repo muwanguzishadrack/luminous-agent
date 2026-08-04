@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ActorType;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
  * Append-only handover-protocol audit (docs/02-data-model.md §5).
  *
  * @property int $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $conversation_id
  * @property string $event
  * @property string|null $previous_owner_app_id
@@ -22,13 +22,13 @@ use Illuminate\Support\Carbon;
  * @property ActorType $actor_type
  * @property string|null $actor_id
  * @property Carbon $occurred_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Conversation $conversation
  */
 #[Fillable(['conversation_id', 'event', 'previous_owner_app_id', 'new_owner_app_id', 'metadata', 'actor_type', 'actor_id', 'occurred_at'])]
 class ThreadControlEvent extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTeam;
 
     /**
      * The table carries no created_at / updated_at pair.

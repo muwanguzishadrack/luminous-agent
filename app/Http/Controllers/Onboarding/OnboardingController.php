@@ -10,8 +10,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Onboarding\AppendOnboardingEventRequest;
 use App\Http\Requests\Onboarding\ExchangeSignupCodeRequest;
 use App\Models\OnboardingSession;
+use App\Models\WabaAccount;
 use App\Support\AuditLog;
-use App\Support\Facades\Tenancy;
+use App\Support\Facades\Teams;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -29,9 +30,17 @@ class OnboardingController extends Controller
      */
     public function start(Request $request): JsonResponse
     {
-        $tenant = Tenancy::current();
+        $team = Teams::current();
 
-        abort_if($tenant === null, 403, 'A current tenant is required to start onboarding.');
+        abort_if($team === null, 403, 'A team is required to start onboarding.');
+
+        // One WABA per team (D-020): a second Embedded Signup has nothing to
+        // connect to, so it is refused before the browser opens Meta's window.
+        abort_if(
+            WabaAccount::query()->exists(),
+            409,
+            'This workspace is already connected to WhatsApp. A workspace holds one WhatsApp Business Account and one number.',
+        );
 
         $session = new OnboardingSession([
             'nonce' => Str::random(40),
@@ -39,7 +48,7 @@ class OnboardingController extends Controller
             'events' => [],
             'status' => OnboardingStatus::STARTED,
         ]);
-        $session->tenant()->associate($tenant);
+        $session->team()->associate($team);
         $session->save();
 
         AuditLog::record(
@@ -109,14 +118,14 @@ class OnboardingController extends Controller
     /**
      * Re-run the chain from the last incomplete step — resumable, never
      * restarted (docs/m0 §1, §8). Resolved by hand rather than implicit
-     * binding: SubstituteBindings runs before EstablishTenancyContext has
+     * binding: SubstituteBindings runs before EstablishTeamContext has
      * set the RLS session variable.
      */
     public function resume(Request $request, string $session, RunOnboardingChain $chain): JsonResponse
     {
         $session = OnboardingSession::query()
             ->whereKey($session)
-            ->where('tenant_id', Tenancy::currentIdOrFail())
+            ->where('team_id', Teams::currentIdOrFail())
             ->firstOrFail();
 
         // A number that already has two-step verification requires ITS pin on
@@ -130,7 +139,7 @@ class OnboardingController extends Controller
     {
         return OnboardingSession::query()
             ->where('nonce', $nonce)
-            ->where('tenant_id', Tenancy::currentIdOrFail())
+            ->where('team_id', Teams::currentIdOrFail())
             ->firstOrFail();
     }
 

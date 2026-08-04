@@ -3,7 +3,11 @@
 ## Shape
 
 A **single Laravel 13 monolith** serving an Inertia 3 + React 19 SPA, plus queue workers.
-No separate API service, no microservices. Tenancy is a column, not a database.
+No separate API service, no microservices. Team isolation is a column, not a database.
+
+A **team** is one customer workspace: one team per user, one WABA and one phone number per team
+(`92-decisions.md` D-020). There is no team switcher, so every authenticated request has exactly one
+possible team context, resolved from the user's single membership.
 
 ```
                     ┌──────────────────────────────────────────────┐
@@ -44,11 +48,11 @@ group (no session, no CSRF).
 |---|---|---|---|
 | WhatsApp webhooks | `GET|POST /webhooks/meta[/{app}]` — canonical URL is `/webhooks/meta`; the optional app-id segment must match ours | Meta | `X-Hub-Signature-256` HMAC-SHA256 with app secret; `hub.verify_token` on GET |
 | ioTec Pay callbacks | `POST /webhooks/iotec/{kind}` | ioTec | Static security header configured per-wallet in the ioTec portal, **plus** mandatory re-fetch of transaction status before trusting |
-| MBA connectors | `GET|POST /connectors/v1/{tenant}/...` | Meta Business Agent | Per-tenant bearer token, rotatable, scoped to read-only or write tools |
+| MBA connectors | `GET|POST /connectors/v1/{team}/...` | Meta Business Agent | Per-team bearer token, rotatable, scoped to read-only or write tools |
 | Embedded Signup callback | `POST /onboarding/exchange` | Our own browser JS | Session + signed nonce (this one IS in the `web` group) |
 
 > **Critical:** the MBA connector surface means Meta's AI makes live calls into our application on
-> the customer's behalf. It must be fast (target p95 < 800ms), read-mostly, tenant-scoped, and
+> the customer's behalf. It must be fast (target p95 < 800ms), read-mostly, team-scoped, and
 > rate-limited. Treat it as a public product API, not an internal endpoint.
 
 ## Request/response boundaries
@@ -112,7 +116,7 @@ Rules:
 
 ```
 Action: SendMessage
-  1. Authorize (tenant, phone number, user)
+  1. Authorize (team, phone number, user)
   2. Guard: consent (M2) → CSW state (M1) → template category (M3) → budget (M8)
   3. Acquire rate-limit tokens:
        per-number throughput bucket (80 msgs/sec STANDARD · 1,000 HIGH · 20 Coexistence)
@@ -157,7 +161,7 @@ state is a cache of it and must reconcile on every handover event.
 | `config/meta.php` | Graph API version (pinned), app id/secret, ES config id, webhook verify token, permission list |
 | `config/mba.php` | Connector base URL, connector token TTL, supported verticals list, token price for estimates |
 | `config/iotec.php` | Token URL, API base URL, client id/secret, wallet ids per currency, callback header name/value, min amount |
-| `config/tenancy.php` | Tenant resolution strategy, impersonation rules |
+| `config/teams.php` | Team resolution strategy, impersonation rules |
 | `config/limits.php` | All rate limits and tiers in one place, so they are testable and tunable |
 
 **Pin the Graph API version** in config (`v26.0` at time of writing — see `92-decisions.md` D-017)

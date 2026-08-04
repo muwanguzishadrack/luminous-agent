@@ -66,7 +66,7 @@ DispatchCampaignBatch (queue: campaigns)
      on 130429  → throughput exceeded: shrink batch rate, requeue, do NOT fail the recipient
      on 131057  → number mid-throughput-upgrade (~1 min): requeue with short delay
      on 131026  → mark contact undeliverable, suppress from future campaigns
-     on 131042  → PAUSE the whole campaign (payment problem), alert the tenant
+     on 131042  → PAUSE the whole campaign (payment problem), alert the team
      on 80007   → management-API backoff (should not occur on the send path)
      on 190     → trip credential breaker, pause campaign
 ```
@@ -94,10 +94,10 @@ Implementation notes:
 
 | Mode | Behaviour |
 |---|---|
-| `fixed` | One instant, tenant timezone (WABA timezone drives Meta's day boundaries) |
+| `fixed` | One instant, team timezone (WABA timezone drives Meta's day boundaries) |
 | `recipient_local` | Bucket recipients by inferred timezone and send in each local window |
 
-Quiet hours are enforced per tenant (default 21:00–08:00 local): a campaign scheduled into quiet
+Quiet hours are enforced per team (default 21:00–08:00 local): a campaign scheduled into quiet
 hours is held to the next allowed window rather than refused.
 
 ---
@@ -107,7 +107,7 @@ hours is held to the next allowed window rather than refused.
 | Routing | When | Endpoint |
 |---|---|---|
 | `cloud_api` | Utility, authentication, and marketing by default | `POST /{phone_number_id}/messages` |
-| `mm_api` | Marketing templates, when the tenant opts in | `POST /{phone_number_id}/marketing_messages` |
+| `mm_api` | Marketing templates, when the team opts in | `POST /{phone_number_id}/marketing_messages` |
 
 MM API gives up to **9% higher delivery** on high-engagement content plus automatic creative
 optimisation, and adds:
@@ -130,7 +130,7 @@ MM API is send-only: replies always come back through Cloud API on the same numb
 | Control | Behaviour |
 |---|---|
 | Campaign budget cap | Hard stop; remaining recipients suppressed with reason `budget` |
-| Tenant daily cap | Kill-switch across all campaigns |
+| Team daily cap | Kill-switch across all campaigns |
 | Meta max price enrolment | Surface and configure Meta's own max-price setting |
 | Quality trip | If `phone_number_quality_update` drops to RED mid-send, auto-pause and alert |
 | Test send | Send to up to 5 nominated numbers before the real send; required for first-time templates |
@@ -153,13 +153,13 @@ period, then optional auto-send of the winner to the remaining audience.
 
 ## 7. Click tracking
 
-URL buttons are wrapped: `https://{tenant-domain}/c/{token}` → 302 to the target.
+URL buttons are wrapped: `https://{team-domain}/c/{token}` → 302 to the target.
 `token` resolves to `(campaign_id, contact_id, button_index)`. We record the click, then redirect.
 
 Also read Meta's own `template_analytics` click metrics (`url_button`, `quick_reply_button`,
 `unique_url_button`) for cross-checking. Ours is per-contact; Meta's is aggregate.
 
-Redirect safety: only tenant-configured destination domains may be wrapped, to stop the platform
+Redirect safety: only team-configured destination domains may be wrapped, to stop the platform
 becoming an open redirector.
 
 ---
@@ -218,7 +218,7 @@ The pre-flight screen is the most important one: audience count, suppression bre
 | Same contact in two concurrent campaigns | Per-recipient 6s gate serialises them; per-user marketing cap may suppress one |
 | Budget exhausted mid-send | Remaining recipients suppressed with `budget`, campaign completes as partial |
 | 100k-recipient campaign | Queueing is itself chunked; pre-flight count is estimated over a threshold |
-| Tenant wallet empty | Refuse to start; do not begin a send we cannot pay for |
+| Team wallet empty | Refuse to start; do not begin a send we cannot pay for |
 
 ---
 

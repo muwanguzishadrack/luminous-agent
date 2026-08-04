@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\CampaignRouting;
 use App\Enums\CampaignStatus;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\CampaignFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $phone_number_id
  * @property string $name
  * @property string|null $template_id
@@ -37,7 +37,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $started_at
  * @property Carbon|null $completed_at
  * @property Carbon|null $deleted_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read PhoneNumber $phoneNumber
  * @property-read Template|null $template
  * @property-read TemplateGroup|null $templateGroup
@@ -49,7 +49,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['phone_number_id', 'name', 'template_id', 'template_group_id', 'segment_id', 'routing', 'product_policy', 'status', 'scheduled_for', 'timezone_mode', 'budget_cap_minor', 'spent_minor', 'variant_group_id', 'variant_weight', 'stats', 'started_at', 'completed_at'])]
 class Campaign extends Model
 {
-    use BelongsToTenant, HasUuids, SoftDeletes;
+    use BelongsToTeam, HasUuids, SoftDeletes;
 
     /** @use HasFactory<CampaignFactory> */
     use HasFactory;

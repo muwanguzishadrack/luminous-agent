@@ -27,7 +27,7 @@ money / card / bank payments.
 | [02-data-model.md](02-data-model.md) | Complete schema, every table and column |
 | [03-local-development.md](03-local-development.md) | Herd + Docker + Cloudflare Tunnel setup |
 | [04-conventions.md](04-conventions.md) | Laravel / React 19 / TS / Inertia 3 / shadcn conventions |
-| [05-security-multitenancy.md](05-security-multitenancy.md) | Tenant isolation, token vault, webhook auth |
+| [05-security-multitenancy.md](05-security-multitenancy.md) | Team isolation, token vault, webhook auth |
 | [06-testing-strategy.md](06-testing-strategy.md) | Test layers, fakes, contract tests |
 
 ### External API reference (verified)
@@ -43,7 +43,7 @@ money / card / bank payments.
 ### Modules
 | Doc | Module |
 |---|---|
-| [modules/m0-onboarding.md](modules/m0-onboarding.md) | M0 — Tenant onboarding & platform |
+| [modules/m0-onboarding.md](modules/m0-onboarding.md) | M0 — Onboarding & platform |
 | [modules/m1-team-inbox.md](modules/m1-team-inbox.md) | M1 — Team inbox |
 | [modules/m2-contacts-consent.md](modules/m2-contacts-consent.md) | M2 — Contacts, consent & segmentation |
 | [modules/m3-templates.md](modules/m3-templates.md) | M3 — Template management |
@@ -81,7 +81,7 @@ money / card / bank payments.
 
 1. **Never drop a webhook.** Persist raw, ack fast, process async, dedupe on `wamid`. See
    [modules/m1-team-inbox.md](modules/m1-team-inbox.md) and `01-architecture.md`.
-2. **Tenant isolation is a security boundary, not a filter.** See `05-security-multitenancy.md`.
+2. **Team isolation is a security boundary, not a filter.** See `05-security-multitenancy.md`.
 3. **Consent is enforced at send time**, not only at audience-build time.
 4. **Money is append-only.** Payments and usage meters are event-sourced; never mutate in place.
 5. **Every fact about an external API lives in `reference/` with a source link.** No memory-based

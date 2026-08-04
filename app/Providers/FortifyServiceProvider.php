@@ -7,7 +7,7 @@ use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\RegisterResponse;
 use App\Http\Responses\VerifyEmailResponse;
-use App\Models\TenantInvitation;
+use App\Models\TeamInvitation;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -59,7 +59,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
-            'tenantInvitation' => $this->tenantInvitation($request),
+            'teamInvitation' => $this->teamInvitation($request),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/reset-password', [
@@ -76,7 +76,7 @@ class FortifyServiceProvider extends ServiceProvider
         ]));
 
         Fortify::registerView(fn (Request $request) => Inertia::render('auth/register', [
-            'tenantInvitation' => $this->tenantInvitation($request),
+            'teamInvitation' => $this->teamInvitation($request),
         ]));
 
     }
@@ -96,11 +96,11 @@ class FortifyServiceProvider extends ServiceProvider
     }
 
     /**
-     * Get the pending tenant invitation context for auth pages.
+     * Get the pending team invitation context for auth pages.
      *
-     * @return array{code: string, tenantName: string}|null
+     * @return array{code: string, teamName: string}|null
      */
-    private function tenantInvitation(Request $request): ?array
+    private function teamInvitation(Request $request): ?array
     {
         $invitationCode = $request->query('invitation');
 
@@ -108,8 +108,8 @@ class FortifyServiceProvider extends ServiceProvider
             return null;
         }
 
-        $invitation = TenantInvitation::query()
-            ->with('tenant')
+        $invitation = TeamInvitation::query()
+            ->with('team')
             ->where('code', $invitationCode)
             ->whereNull('accepted_at')
             ->where(fn ($query) => $query
@@ -123,7 +123,7 @@ class FortifyServiceProvider extends ServiceProvider
 
         return [
             'code' => $invitation->code,
-            'tenantName' => $invitation->tenant->name,
+            'teamName' => $invitation->team->name,
         ];
     }
 }

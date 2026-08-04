@@ -178,7 +178,7 @@ response was lost mid-flight.
 ### Fees
 
 `transactionCharge` (ioTec) + `vendorCharge` (telco/PSP) = `totalTransactionCharge`. Persist all
-three and emit a `payment_fee` usage meter entry. These are real costs and belong in the tenant P&L
+three and emit a `payment_fee` usage meter entry. These are real costs and belong in the team P&L
 (M8), not discarded.
 
 ---

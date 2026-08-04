@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\CtwaReferralFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
  * Click-to-WhatsApp ad referral (docs/02-data-model.md §10).
  *
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $contact_id
  * @property string $conversation_id
  * @property string $message_wamid
@@ -31,14 +31,14 @@ use Illuminate\Support\Carbon;
  * @property string|null $ctwa_clid
  * @property array<string, mixed>|null $welcome_message
  * @property Carbon $occurred_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Contact $contact
  * @property-read Conversation $conversation
  */
 #[Fillable(['contact_id', 'conversation_id', 'message_wamid', 'source_id', 'source_type', 'source_url', 'headline', 'body', 'media_type', 'image_url', 'video_url', 'thumbnail_url', 'ctwa_clid', 'welcome_message', 'occurred_at'])]
 class CtwaReferral extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<CtwaReferralFactory> */
     use HasFactory;

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +11,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $catalog_id
  * @property string $retailer_id
  * @property string|null $meta_product_id
@@ -25,13 +25,13 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed> $attributes
  * @property string|null $sync_status
  * @property Carbon|null $last_synced_at
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Catalog $catalog
  */
 #[Fillable(['catalog_id', 'retailer_id', 'meta_product_id', 'name', 'description', 'price_minor', 'currency', 'availability', 'image_url', 'url', 'attributes', 'sync_status', 'last_synced_at'])]
 class Product extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.

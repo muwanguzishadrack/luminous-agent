@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::create('conversations', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->uuid('phone_number_id')->index(); // group 2 — plain uuid
             $table->uuid('contact_id')->index(); // group 4 — plain uuid
             $table->string('state'); // enum: ai|queued|human|closed (app-level)
@@ -38,16 +38,16 @@ return new class extends Migration
             $table->integer('ai_handled_count')->default(0); // containment-rate reporting
             $table->integer('human_handled_count')->default(0);
 
-            $table->unique(['tenant_id', 'phone_number_id', 'contact_id']);
+            $table->unique(['team_id', 'phone_number_id', 'contact_id']);
             $table->index(['assigned_user_id', 'state']);
             $table->index('csw_expires_at');
         });
 
-        DB::statement('CREATE INDEX conversations_tenant_state_last_message_idx ON conversations (tenant_id, state, last_message_at DESC)');
+        DB::statement('CREATE INDEX conversations_team_state_last_message_idx ON conversations (team_id, state, last_message_at DESC)');
 
         Schema::create('media', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('meta_media_id')->nullable(); // Meta's id; expires ~30 days
             $table->char('sha256', 64)->index(); // dedupe identical uploads
             $table->string('mime_type');
@@ -64,7 +64,7 @@ return new class extends Migration
 
         Schema::create('messages', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('conversation_id')->constrained('conversations');
             $table->string('wamid')->nullable()->unique(); // idempotency key; nullable until Meta assigns it on outbound send
             $table->string('direction'); // enum: inbound|outbound
@@ -95,13 +95,13 @@ return new class extends Migration
             $table->index('campaign_id');
         });
 
-        DB::statement('CREATE INDEX messages_tenant_occurred_idx ON messages (tenant_id, occurred_at DESC)');
+        DB::statement('CREATE INDEX messages_team_occurred_idx ON messages (team_id, occurred_at DESC)');
         DB::statement("CREATE INDEX messages_status_partial_idx ON messages (status) WHERE status IN ('queued', 'sent')");
 
         // Append-only status ladder — lets a `read` arriving before `delivered` be recorded honestly.
         Schema::create('message_events', function (Blueprint $table) {
             $table->id(); // high-volume append-only: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('message_id')->constrained('messages');
             $table->index('message_id');
             $table->string('wamid');
@@ -114,7 +114,7 @@ return new class extends Migration
 
         Schema::create('thread_control_events', function (Blueprint $table) {
             $table->id(); // append-only: bigint pk
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->foreignUuid('conversation_id')->constrained('conversations');
             $table->index('conversation_id');
             $table->string('event'); // enum: pass|take|request|app_roles (app-level)
@@ -128,7 +128,7 @@ return new class extends Migration
 
         Schema::create('canned_replies', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('tenant_id')->index();
+            $table->uuid('team_id')->index();
             $table->string('shortcut');
             $table->string('title');
             $table->text('body');

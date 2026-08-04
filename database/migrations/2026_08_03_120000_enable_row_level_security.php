@@ -4,23 +4,24 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Row Level Security for every table carrying tenant_id (docs/02-data-model.md,
+ * Row Level Security for every table carrying team_id (docs/02-data-model.md,
  * docs/05-security-multitenancy.md). Defence in depth behind the global
- * Eloquent tenant scope: sessions must SET app.tenant_id before touching
- * tenant-scoped rows.
+ * Eloquent team scope: sessions must SET app.team_id before touching
+ * team-scoped rows.
  *
- * Excluded (no tenant_id column): tenants, users, rate_cards,
+ * Excluded (no team_id column): teams, users, rate_cards,
  * contact_label, conversation_label, segment_members, mba_connector_tools.
  */
 return new class extends Migration
 {
     /**
-     * Tables with a NOT NULL tenant_id — strict isolation.
+     * Tables with a NOT NULL team_id — strict isolation.
      */
-    private const TENANT_TABLES = [
-        // Group 1 — tenancy & identity (created by the group-1 migration)
-        // tenant_user gets a bespoke user-aware policy below: users must see
-        // their own memberships across tenants (switcher, login) pre-context.
+    private const TEAM_TABLES = [
+        // Group 1 — teams & identity (created by the group-1 migration)
+        // team_user gets a bespoke user-aware policy below: a user must be
+        // able to read their own membership row *before* team context exists,
+        // because that row is what establishes the context (docs/05 §1).
         'audit_logs',
         'admin_sessions',
         // Group 2 — Meta assets
@@ -78,10 +79,10 @@ return new class extends Migration
     ];
 
     /**
-     * Tables where tenant_id is nullable — null rows are platform-level and
+     * Tables where team_id is nullable — null rows are platform-level and
      * remain visible to every session.
      */
-    private const NULLABLE_TENANT_TABLES = [
+    private const NULLABLE_TEAM_TABLES = [
         'webhook_deliveries',
         'iotec_wallets',
         'onboarding_sessions',
@@ -89,27 +90,29 @@ return new class extends Migration
 
     public function up(): void
     {
-        foreach (self::TENANT_TABLES as $table) {
-            $this->enableRls($table, "tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid");
+        foreach (self::TEAM_TABLES as $table) {
+            $this->enableRls($table, "team_id = NULLIF(current_setting('app.team_id', true), '')::uuid");
         }
 
-        foreach (self::NULLABLE_TENANT_TABLES as $table) {
-            $this->enableRls($table, "tenant_id IS NULL OR tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid");
+        foreach (self::NULLABLE_TEAM_TABLES as $table) {
+            $this->enableRls($table, "team_id IS NULL OR team_id = NULLIF(current_setting('app.team_id', true), '')::uuid");
         }
 
-        // Deliberate exception: tenant_user carries tenant_id but gets NO RLS
-        // policy. It is the context-bootstrapping bridge (tenant switcher,
-        // registration, admin managing members of a non-current tenant, a
-        // removed member's fallback-tenant lookup) — every one of those is a
-        // legitimate cross-context read. It holds only ids, role and status;
-        // isolation is enforced by authorization policies and user-scoped
-        // relations (docs/05-security-multitenancy.md §1).
+        // team_user is the one table the plain policy cannot cover: at
+        // authentication we must read a user's membership before team context
+        // exists. Its policy is user-aware, so a signed-in user with no team
+        // context can read exactly one row — their own membership — and that
+        // row is what establishes the context (docs/05 §1 layer 2).
+        $this->enableRls('team_user', <<<'SQL'
+            team_id = NULLIF(current_setting('app.team_id', true), '')::uuid
+            OR user_id = NULLIF(current_setting('app.user_id', true), '')::uuid
+            SQL);
     }
 
     public function down(): void
     {
-        foreach (array_merge(self::TENANT_TABLES, self::NULLABLE_TENANT_TABLES) as $table) {
-            DB::statement("DROP POLICY IF EXISTS tenant_isolation ON {$table}");
+        foreach ([...self::TEAM_TABLES, ...self::NULLABLE_TEAM_TABLES, 'team_user'] as $table) {
+            DB::statement("DROP POLICY IF EXISTS team_isolation ON {$table}");
             DB::statement("ALTER TABLE {$table} NO FORCE ROW LEVEL SECURITY");
             DB::statement("ALTER TABLE {$table} DISABLE ROW LEVEL SECURITY");
         }
@@ -120,7 +123,7 @@ return new class extends Migration
         DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
         DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
         DB::statement(
-            "CREATE POLICY tenant_isolation ON {$table}
+            "CREATE POLICY team_isolation ON {$table}
              USING ({$predicate})
              WITH CHECK ({$predicate})"
         );

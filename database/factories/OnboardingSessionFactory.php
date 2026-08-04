@@ -24,7 +24,7 @@ class OnboardingSessionFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => null,
+            'team_id' => null,
             'nonce' => Str::random(40),
             'feature_type' => null,
             'es_version' => 'v4',

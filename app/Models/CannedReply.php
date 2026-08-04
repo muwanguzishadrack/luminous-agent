@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\CannedReplyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -11,19 +11,19 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $shortcut
  * @property string $title
  * @property string $body
  * @property array<int, mixed> $variables
  * @property bool $is_shared
  * @property string|null $created_by
- * @property-read Tenant $tenant
+ * @property-read Team $team
  */
 #[Fillable(['shortcut', 'title', 'body', 'variables', 'is_shared', 'created_by'])]
 class CannedReply extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<CannedReplyFactory> */
     use HasFactory;

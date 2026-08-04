@@ -66,12 +66,12 @@ internal hosts.
 
 ## 4. Connectors — where our value lives
 
-Meta's agent calls **us**. Two connectors per tenant.
+Meta's agent calls **us**. Two connectors per team.
 
 ### 4.1 Read connector — `customer-context`
 
 ```
-GET /connectors/v1/{tenant}/customer-context?wa_id={wa_id}
+GET /connectors/v1/{team}/customer-context?wa_id={wa_id}
 Authorization: Bearer <connector token>
 ```
 
@@ -138,8 +138,8 @@ customer still confirms in the ioTec/MTN flow.
 
 ### 4.3 Connector tokens
 
-Per-tenant, hashed at rest (`connector_tokens.token_hash`), prefix-indexed for lookup, ability-scoped,
-rotatable, with `last_used_at`. Token's `tenant_id` **must** match the `{tenant}` URL segment; a
+Per-team, hashed at rest (`connector_tokens.token_hash`), prefix-indexed for lookup, ability-scoped,
+rotatable, with `last_used_at`. Token's `team_id` **must** match the `{team}` URL segment; a
 mismatch returns 404, not 403.
 
 ---
@@ -174,7 +174,7 @@ Push business events so the agent acts proactively in an existing thread:
 
 Recorded in `mba_events` with the response. **Note the cost:** every agent reply is charged per token
 whether the customer asked for it or not. Agent Events must be deliberate and rate-limited per
-conversation, and each kind must be individually switchable by the tenant.
+conversation, and each kind must be individually switchable by the team.
 
 ---
 
@@ -182,7 +182,7 @@ conversation, and each kind must be individually switchable by the tenant.
 
 | Capability | Endpoint | Our surface |
 |---|---|---|
-| Scripted test conversations | Agent Test | A test suite per tenant, runnable before enabling and after any knowledge change |
+| Scripted test conversations | Agent Test | A test suite per team, runnable before enabling and after any knowledge change |
 | Performance scoring | Agent Eval | Client-facing quality report |
 | Sandbox reset | `reset` keyword | **Requires Meta to enable it for specific test consumer numbers** — request during setup |
 
@@ -207,7 +207,7 @@ them in P2, not later.
 |---|---|
 | Token meter | `usage_meters.meter = 'mba_tokens'` |
 | Estimation fallback | **Meta's MBA analytics/webhook details were still "forthcoming" as of Aug 1, 2026.** Until confirmed, estimate as `messages × config('pricing.mba.est_tokens_per_message')` and **label it an estimate in the UI.** Re-check the pricing docs before implementing. |
-| Per-tenant budget | Soft warning, then auto-disable the agent at a hard cap |
+| Per-team budget | Soft warning, then auto-disable the agent at a hard cap |
 | Per-conversation cap | Disable the agent on a runaway thread and escalate to a human |
 | Complexity insight | Flag question types that consume the most tokens, so the client can add an FAQ and cut cost |
 
@@ -261,6 +261,6 @@ debugging: when the agent gives a wrong answer, the first question is always "wh
 6. Take over / hand back both work and are reflected in `thread_control_events` and in Meta's
    `messaging_handovers`.
 7. Containment rate and cost per resolution are computed and displayed.
-8. Token spend hitting the tenant hard cap disables the agent automatically.
+8. Token spend hitting the team hard cap disables the agent automatically.
 9. U1–U6 in `reference/meta-business-agent.md` §8 are answered empirically and recorded in
    `92-decisions.md`.

@@ -2,7 +2,7 @@
 
 use App\Models\OnboardingSession;
 use App\Models\User;
-use App\Support\Facades\Tenancy;
+use App\Support\Facades\Teams;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -16,8 +16,8 @@ test('guests cannot touch the onboarding endpoints', function () {
     $this->postJson(route('onboarding.exchange'), ['nonce' => 'x', 'code' => 'y', 'waba_id' => '1', 'phone_number_id' => '2'])->assertUnauthorized();
 });
 
-test('start creates a session with a random nonce for the current tenant', function () {
-    $user = User::factory()->create();
+test('start creates a session with a random nonce for the current team', function () {
+    $user = User::factory()->withTeam()->create();
 
     $response = $this->actingAs($user)->postJson(route('onboarding.start'))->assertCreated();
 
@@ -27,16 +27,16 @@ test('start creates a session with a random nonce for the current tenant', funct
         ->and($response->json('nonce'))->toBe($session->nonce)
         ->and($response->json('status'))->toBe('started')
         ->and(strlen($session->nonce))->toBe(40)
-        ->and($session->tenant_id)->toBe($user->currentTenant->id)
+        ->and($session->team_id)->toBe($user->team->id)
         ->and($session->es_version)->toBe('v4')
         ->and($session->events)->toBe([]);
 
-    Tenancy::initialize($user->currentTenant);
+    Teams::initialize($user->team);
     expect(DB::table('audit_logs')->where('action', 'onboarding.session_started')->count())->toBe(1);
 });
 
 test('events are appended in order and the coexistence FINISH marks the session', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTeam()->create();
 
     $nonce = $this->actingAs($user)->postJson(route('onboarding.start'))->json('nonce');
 
@@ -59,9 +59,9 @@ test('events are appended in order and the coexistence FINISH marks the session'
         ->and($session->status)->toBe('started');
 });
 
-test('a nonce belonging to another tenant is a 404, never a crossover', function () {
-    $alice = User::factory()->create();
-    $mallory = User::factory()->create();
+test('a nonce belonging to another team is a 404, never a crossover', function () {
+    $alice = User::factory()->withTeam()->create();
+    $mallory = User::factory()->withTeam()->create();
 
     $nonce = $this->actingAs($alice)->postJson(route('onboarding.start'))->json('nonce');
 
@@ -78,9 +78,9 @@ test('a nonce belonging to another tenant is a 404, never a crossover', function
     ])->assertNotFound();
 });
 
-test('resuming another tenant session is a 404', function () {
-    $alice = User::factory()->create();
-    $mallory = User::factory()->create();
+test('resuming another team session is a 404', function () {
+    $alice = User::factory()->withTeam()->create();
+    $mallory = User::factory()->withTeam()->create();
 
     $id = $this->actingAs($alice)->postJson(route('onboarding.start'))->json('id');
 

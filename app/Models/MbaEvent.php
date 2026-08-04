@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
  * Agent Events we push to Meta (docs/02-data-model.md §8).
  *
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $conversation_id
  * @property string $kind
  * @property array<string, mixed> $payload
@@ -21,13 +21,13 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property Carbon|null $sent_at
  * @property array<string, mixed>|null $error
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read Conversation $conversation
  */
 #[Fillable(['conversation_id', 'kind', 'payload', 'external_id', 'status', 'sent_at', 'error'])]
 class MbaEvent extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /**
      * The table carries no created_at / updated_at pair.

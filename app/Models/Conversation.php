@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ConversationState;
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToTeam;
 use Database\Factories\ConversationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
- * @property string $tenant_id
+ * @property string $team_id
  * @property string $phone_number_id
  * @property string $contact_id
  * @property ConversationState $state
@@ -36,7 +36,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $sla_breached_at
  * @property int $ai_handled_count
  * @property int $human_handled_count
- * @property-read Tenant $tenant
+ * @property-read Team $team
  * @property-read PhoneNumber $phoneNumber
  * @property-read Contact $contact
  * @property-read User|null $assignedUser
@@ -48,7 +48,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['phone_number_id', 'contact_id', 'state', 'owner_app_id', 'assigned_user_id', 'assigned_at', 'csw_expires_at', 'fep_expires_at', 'last_message_at', 'last_inbound_at', 'last_outbound_at', 'unread_count', 'first_response_at', 'resolved_at', 'snoozed_until', 'sla_breached_at', 'ai_handled_count', 'human_handled_count'])]
 class Conversation extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTeam, HasUuids;
 
     /** @use HasFactory<ConversationFactory> */
     use HasFactory;

@@ -15,6 +15,12 @@ return [
     'solution_id' => env('META_SOLUTION_ID'),
     'system_token' => env('META_SYSTEM_TOKEN'),
 
+    // Meta-hosted surfaces we link out to. Tech Provider model: the client
+    // owns the payment method and their spend is not visible to us
+    // (docs/reference/whatsapp-cloud-api.md §5 E, docs/modules/m0 §7).
+    'whatsapp_manager_url' => env('META_WHATSAPP_MANAGER_URL', 'https://business.facebook.com/wa/manage/phone-numbers/'),
+    'billing_hub_url' => env('META_BILLING_HUB_URL', 'https://business.facebook.com/billing_hub/accounts'),
+
     // Tech Provider: business tokens only (reference §1).
     'permissions' => [
         'whatsapp_business_management',

@@ -1,5 +1,6 @@
 <?php
 
+use Tests\Fakes\FakeGraphClient;
 use Tests\RefreshesTestDatabase;
 use Tests\TestCase;
 
@@ -44,7 +45,61 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Canned Graph fixtures for a full onboarding of one WABA + one number.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function primeGraphFixtures(FakeGraphClient $fake, string $wabaId, string $phoneNumberId, array $overrides = []): void
 {
-    // ..
+    $fake->fake("GET {$wabaId}/subscribed_apps", $overrides['subscribed_apps'] ?? [
+        'data' => [['whatsapp_business_api_data' => [
+            'id' => config('meta.app_id'),
+            'name' => 'Luminous',
+            'link' => 'https://luminous.test',
+        ]]],
+    ]);
+
+    $fake->fake("GET {$wabaId}", [
+        'id' => $wabaId,
+        'name' => 'Acme Stores',
+        'currency' => 'UGX',
+        'timezone_id' => 'Africa/Kampala',
+        'account_review_status' => 'APPROVED',
+        'business_verification_status' => 'verified',
+        'owner_business_info' => ['id' => '515151515151515', 'name' => 'Acme Holdings'],
+        'is_payment_enabled' => true,
+    ]);
+
+    $fake->fake("GET {$wabaId}/phone_numbers", ['data' => [[
+        'id' => $phoneNumberId,
+        'verified_name' => 'Acme Stores',
+        'display_phone_number' => '+256 700 000 001',
+        'quality_rating' => 'GREEN',
+        'messaging_limit_tier' => 'TIER_1K',
+        'throughput' => ['level' => 'STANDARD'],
+        'platform_type' => 'CLOUD_API',
+        'is_on_biz_app' => $overrides['is_on_biz_app'] ?? false,
+        'code_verification_status' => 'VERIFIED',
+    ]]]);
+
+    $fake->fake("GET {$wabaId}/message_templates", ['data' => [
+        [
+            'id' => '771111111111111',
+            'name' => 'order_update',
+            'language' => 'en',
+            'category' => 'UTILITY',
+            'status' => 'APPROVED',
+            'components' => [['type' => 'BODY', 'text' => 'Your order {{1}} has shipped.']],
+            'quality_score' => ['score' => 'GREEN', 'date' => 1754179200],
+        ],
+        [
+            'id' => '772222222222222',
+            'name' => 'welcome_offer',
+            'language' => 'en',
+            'category' => 'MARKETING',
+            'status' => 'PENDING',
+            'components' => [['type' => 'BODY', 'text' => 'Hi {{1}}, welcome!']],
+        ],
+    ], 'paging' => ['cursors' => ['before' => 'BEFORE', 'after' => 'AFTER']]]);
 }
