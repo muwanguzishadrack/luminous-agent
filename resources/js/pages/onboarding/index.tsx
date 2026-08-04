@@ -2,6 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     CheckCircle2,
     Circle,
+    Building2,
     CircleAlert,
     MessagesSquare,
     KeyRound,
@@ -113,6 +114,7 @@ type EmbeddedSignupEvent = {
 };
 
 type Props = {
+    tenant: { name: string; slug: string };
     appId: string;
     configId: string;
     graphVersion: string;
@@ -221,6 +223,7 @@ function StepIcon({ state }: { state: StepState }) {
 }
 
 export default function OnboardingIndex({
+    tenant,
     appId,
     configId,
     graphVersion,
@@ -546,6 +549,20 @@ export default function OnboardingIndex({
                     title="Connect WhatsApp"
                     description="Link a WhatsApp Business number through Meta's Embedded Signup — live in your inbox in under ten minutes."
                 />
+
+                {/* Onboarding is not tenant-prefixed, so it follows the
+                    current workspace. Say which one, so a real number is
+                    never connected to the wrong tenant by accident. */}
+                <Alert>
+                    <Building2 className="size-4" />
+                    <AlertTitle>
+                        Connecting to {tenant.name || 'this workspace'}
+                    </AlertTitle>
+                    <AlertDescription>
+                        The number you connect will belong to this workspace.
+                        Switch workspace first if that is not where you want it.
+                    </AlertDescription>
+                </Alert>
 
                 {sdkState === 'failed' && (
                     <Alert variant="destructive">

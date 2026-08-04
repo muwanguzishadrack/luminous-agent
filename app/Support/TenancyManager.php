@@ -60,6 +60,14 @@ class TenancyManager
     }
 
     /**
+     * @throws MissingTenantContext when no tenant context is established.
+     */
+    public function currentOrFail(): Tenant
+    {
+        return $this->tenant ?? throw new MissingTenantContext;
+    }
+
+    /**
      * @throws MissingTenantContext when no tenant context is established —
      *                              there is deliberately no silent default (docs/05 §1 layer 1).
      */

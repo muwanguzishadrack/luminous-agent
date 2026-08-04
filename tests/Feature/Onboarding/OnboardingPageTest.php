@@ -176,3 +176,18 @@ test('the dashboard flags whether the tenant has connected numbers', function ()
         ->assertInertia(fn (Assert $page) => $page
             ->where('hasWhatsAppNumbers', true));
 });
+
+test('the onboarding page names the workspace the number will belong to', function () {
+    $user = User::factory()->create();
+    $tenant = $user->currentTenant;
+    $tenant->forceFill(['name' => 'Acme Trading'])->save();
+
+    $this->actingAs($user)
+        ->get(route('onboarding.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('onboarding/index')
+            ->where('tenant.name', 'Acme Trading')
+            ->where('tenant.slug', $tenant->slug),
+        );
+});

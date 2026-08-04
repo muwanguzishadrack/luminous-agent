@@ -25,6 +25,13 @@ class OnboardingPageController extends Controller
         $session = $this->latestSession();
 
         return Inertia::render('onboarding/index', [
+            // Which workspace the number will be attached to. Onboarding is
+            // not tenant-prefixed, so it follows the *current* tenant —
+            // stating it prevents connecting a real number to the wrong one.
+            'tenant' => [
+                'name' => (string) Tenancy::currentOrFail()->name,
+                'slug' => (string) Tenancy::currentOrFail()->slug,
+            ],
             'appId' => (string) config('meta.app_id'),
             'configId' => (string) config('meta.es_config_id'),
             'graphVersion' => (string) config('meta.graph_version'),

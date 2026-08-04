@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static void actingAs(?User $user)
  * @method static void forget()
  * @method static Tenant|null current()
+ * @method static Tenant currentOrFail()
  * @method static string|null currentId()
  * @method static string currentIdOrFail()
  * @method static bool initialized()
