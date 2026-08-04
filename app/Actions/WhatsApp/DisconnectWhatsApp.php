@@ -3,6 +3,7 @@
 namespace App\Actions\WhatsApp;
 
 use App\Enums\ActorType;
+use App\Enums\MetaCredentialType;
 use App\Exceptions\CoexistenceDeregisterNotPermitted;
 use App\Models\MetaCredential;
 use App\Models\PhoneNumber;
@@ -41,20 +42,29 @@ class DisconnectWhatsApp
             'waba_id' => $account->waba_id,
         ];
 
-        DB::transaction(function () use ($account, $number): void {
-            // The vaulted business token must not outlive the connection it
-            // was issued for — the rows go, never just the flag.
-            MetaCredential::query()->where('waba_account_id', $account->id)->delete();
+        DB::transaction(function () use ($account, $number, $actor, $context): void {
+            // Every business credential the team holds, not just the ones
+            // linked to this WABA: a revoked token from an earlier, failed
+            // connection attempt has a null waba_account_id and would
+            // otherwise survive the disconnect. The rows go, never just the
+            // flag — a vaulted token must not outlive its connection.
+            MetaCredential::query()
+                ->where('type', MetaCredentialType::Business)
+                ->delete();
 
             $number->delete();
             $account->delete();
-        });
 
-        AuditLog::record(
-            'whatsapp.disconnected',
-            $actor === null ? ActorType::System : ActorType::User,
-            (string) $actor?->id,
-            context: $context,
-        );
+            // Inside the transaction on purpose. Auditing a destructive
+            // action is not optional, so a failure here must take the
+            // disconnect with it rather than leave the connection torn down
+            // with no record of who did it.
+            AuditLog::record(
+                'whatsapp.disconnected',
+                $actor === null ? ActorType::System : ActorType::User,
+                (string) $actor?->id,
+                context: $context,
+            );
+        });
     }
 }

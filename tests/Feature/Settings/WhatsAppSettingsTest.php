@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MetaCredentialType;
 use App\Enums\TeamRole;
 use App\Enums\WhatsAppVertical;
 use App\Models\MetaCredential;
@@ -370,6 +371,69 @@ test('disconnecting deregisters the number and clears the connection', function 
         ->and(PhoneNumber::query()->count())->toBe(0)
         ->and(MetaCredential::query()->where('waba_account_id', $account->id)->count())->toBe(0)
         ->and(DB::table('audit_logs')->where('action', 'whatsapp.disconnected')->count())->toBe(1);
+});
+
+/**
+ * A revoked token from an earlier, failed connection attempt has a null
+ * waba_account_id. Scoping the cleanup to the WABA left it behind, so a
+ * disconnected team still held a vaulted business token.
+ */
+test('disconnecting clears credentials that were never linked to the waba', function () {
+    ['user' => $user] = connectedTeam();
+
+    Teams::initialize($user->team);
+
+    MetaCredential::factory()->create([
+        'team_id' => $user->team->id,
+        'waba_account_id' => null,
+        'type' => MetaCredentialType::Business,
+        'revoked_at' => now()->subDay(),
+    ]);
+
+    fakeGraph();
+
+    $this->actingAs($user)->delete(route('whatsapp.disconnect'));
+
+    Teams::initialize($user->team);
+
+    expect(MetaCredential::query()->count())->toBe(0);
+});
+
+/**
+ * The disconnect and its audit entry are one transaction. Auditing a
+ * destructive action is not optional: a failure to record it must undo the
+ * disconnect rather than leave the connection torn down with no trace of who
+ * did it — which is exactly what an out-of-transaction write allowed.
+ */
+test('a failed audit write rolls the disconnect back', function () {
+    ['user' => $user] = connectedTeam();
+
+    fakeGraph();
+
+    // Reproduce the real failure: audit_logs.id is a bigserial, and a
+    // sequence left behind its own table hands out an id that is already
+    // taken. Restoring rows with explicit ids does exactly this.
+    $migrator = DB::connection('pgsql_migrator');
+
+    $migrator->table('audit_logs')->insert([
+        'id' => 500,
+        'team_id' => $user->team->id,
+        'actor_type' => 'system',
+        'action' => 'test.seeded_row',
+        'created_at' => now(),
+    ]);
+
+    $migrator->statement("SELECT setval('audit_logs_id_seq', 500, false)");
+
+    $this->actingAs($user)
+        ->delete(route('whatsapp.disconnect'))
+        ->assertServerError();
+
+    Teams::initialize($user->team);
+
+    expect(WabaAccount::query()->count())->toBe(1)
+        ->and(PhoneNumber::query()->count())->toBe(1)
+        ->and(MetaCredential::query()->count())->toBe(1);
 });
 
 test('a coexistence number is never deregistered and is given the handset path instead', function () {
