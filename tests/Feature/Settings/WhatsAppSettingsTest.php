@@ -442,8 +442,14 @@ test('every one of meta\'s 21 verticals is accepted', function (string $vertical
     WhatsAppVertical::cases(),
 ));
 
-test('disconnecting deregisters the number and clears the connection', function () {
-    ['user' => $user, 'account' => $account, 'number' => $number] = connectedTeam();
+/**
+ * Disconnecting clears the connection here and leaves the number registered
+ * (docs/modules/m0-onboarding.md §7). Deregistering is rate-limited, refused
+ * after paid traffic and impossible for a Coexistence number, so the only
+ * Graph call is the one that stops the webhooks.
+ */
+test('disconnecting unsubscribes webhooks and leaves the number registered', function () {
+    ['user' => $user, 'account' => $account] = connectedTeam();
 
     $fake = fakeGraph();
 
@@ -452,12 +458,11 @@ test('disconnecting deregisters the number and clears the connection', function 
         ->assertRedirect(route('whatsapp.show'))
         ->assertSessionHasNoErrors();
 
-    $deregister = collect($fake->calls)->first(
-        fn (array $call): bool => $call['path'] === "{$number->phone_number_id}/deregister",
-    );
+    $calls = collect($fake->calls);
 
-    expect($deregister)->not->toBeNull()
-        ->and($deregister['method'])->toBe('POST');
+    expect($calls->contains(fn (array $call): bool => str_contains($call['path'], 'deregister')))->toBeFalse()
+        ->and($calls->contains(fn (array $call): bool => $call['method'] === 'DELETE'
+            && $call['path'] === "{$account->waba_id}/subscribed_apps"))->toBeTrue();
 
     Teams::initialize($user->team);
 
@@ -599,21 +604,81 @@ test('a failed audit write rolls the disconnect back', function () {
     $migrator->statement("SELECT setval('audit_logs_id_seq', 1, false)");
 });
 
-test('a coexistence number is never deregistered and is given the handset path instead', function () {
-    ['user' => $user, 'number' => $number] = connectedTeam(numberAttributes: ['is_on_biz_app' => true]);
+/**
+ * Meta refuses to deregister a Coexistence number at all, which under the old
+ * deregister-first disconnect left those teams with no way out of Luminous
+ * short of unlinking the handset. Nothing the disconnect now does is refused,
+ * so they leave like anyone else — and the handset keeps its own link.
+ */
+test('a coexistence number disconnects like any other', function () {
+    ['user' => $user] = connectedTeam(numberAttributes: ['is_on_biz_app' => true]);
+
+    $fake = fakeGraph();
 
     $this->actingAs($user)
-        ->from(route('whatsapp.show'))
         ->delete(route('whatsapp.disconnect'))
         ->assertRedirect(route('whatsapp.show'))
-        ->assertSessionHasErrors('meta');
+        ->assertSessionHasNoErrors();
 
-    expect(fakeGraph()->calls)->toBeEmpty();
+    expect(collect($fake->calls)->contains(
+        fn (array $call): bool => str_contains($call['path'], 'deregister'),
+    ))->toBeFalse();
 
     Teams::initialize($user->team);
-    $number->refresh();
 
-    expect(PhoneNumber::query()->count())->toBe(1);
+    expect(PhoneNumber::query()->count())->toBe(0)
+        ->and(WabaAccount::query()->count())->toBe(0);
+});
+
+/**
+ * The usual reason to disconnect is a connection that is already broken, and
+ * that is exactly when the unsubscribe call fails. Letting it block the
+ * disconnect would leave the team holding a connection it cannot get rid of,
+ * so the failure is recorded and surfaced, never fatal.
+ */
+test('disconnecting completes even when meta refuses to unsubscribe', function () {
+    ['user' => $user] = connectedTeam();
+
+    fakeGraph()->failWith(190);
+
+    $this->actingAs($user)
+        ->delete(route('whatsapp.disconnect'))
+        ->assertRedirect(route('whatsapp.show'))
+        ->assertSessionHasNoErrors();
+
+    Teams::initialize($user->team);
+
+    /** @var object{context: string|null} $entry */
+    $entry = DB::table('audit_logs')->where('action', 'whatsapp.disconnected')->sole();
+
+    /** @var array<string, mixed> $context */
+    $context = json_decode((string) $entry->context, true);
+
+    expect(WabaAccount::query()->count())->toBe(0)
+        ->and(PhoneNumber::query()->count())->toBe(0)
+        ->and($context['webhooks_unsubscribed'])->toBeFalse()
+        ->and($context['unsubscribe_error'])->toContain('190');
+});
+
+/**
+ * A revoked token cannot unsubscribe, and there is nothing left to authorise
+ * the call with. The team must still be able to walk away.
+ */
+test('disconnecting completes when the business token is gone', function () {
+    ['user' => $user] = connectedTeam();
+
+    Teams::initialize($user->team);
+    MetaCredential::query()->delete();
+
+    $this->actingAs($user)
+        ->delete(route('whatsapp.disconnect'))
+        ->assertRedirect(route('whatsapp.show'))
+        ->assertSessionHasNoErrors();
+
+    Teams::initialize($user->team);
+
+    expect(WabaAccount::query()->count())->toBe(0)
+        ->and(PhoneNumber::query()->count())->toBe(0);
 });
 
 test('the disconnected page falls back to the reconnect prompt', function () {

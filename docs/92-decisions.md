@@ -344,6 +344,42 @@ schema and every sentence we say to a customer.
 
 ---
 
+## D-021 — Disconnect never deregisters
+
+**Date:** 2026-08-04 · **Status:** accepted (user decision)
+
+**Context.** Disconnecting a team originally called `POST /{phone-number-id}/deregister` before
+clearing the local records. That conflated two unrelated things: the client leaving *us*, and the
+client's number leaving the *Cloud API*. Deregistering is close to irreversible in practice — the
+number stops sending and receiving for every provider until it is registered again with its
+six-digit PIN, the endpoint is capped at 10 attempts per number per rolling 72 hours (`133016`), it
+is refused outright if the number sent paid messages in the last 30 days, and Meta will not
+deregister a Coexistence number at all. That last refusal left Coexistence teams with no way to
+leave Luminous except by unlinking the handset.
+
+**Decision.** Disconnect is a Luminous-side operation. It clears the WABA, the number, every vaulted
+business credential and the team's signup sessions, and calls `DELETE /{waba-id}/subscribed_apps` so
+Meta stops delivering that account's webhooks to us. The number is left registered. `deregister` is
+removed from the `GraphClient` contract entirely, so no code path can reach it.
+
+**Consequences.**
+- Leaving is reversible and cheap: reconnect through ES with no re-registration, or hand the number
+  to another provider.
+- One exit, not two, and nothing for the UI to branch on — a Coexistence number disconnects like any
+  other, and `CoexistenceDeregisterNotPermitted` is gone.
+- The unsubscribe is best effort: it is exactly the call that fails on an already-broken connection,
+  so a failure is audited (`webhooks_unsubscribed: false`) and surfaced as a warning rather than
+  blocking the disconnect. A team must always be able to leave.
+- A client who genuinely wants the number off the Cloud API does it in WhatsApp Manager, where Meta
+  shows them the 30-day paid-message block and the consequences in their own words.
+
+**Rejected.** Offering both exits side by side — two destructive buttons a few pixels apart, one of
+them irreversible and rate-limited, is a UI that eventually costs someone their number. Also
+rejected: keeping `deregister()` on the client with no caller, which is a loaded method waiting to
+be wired up by accident.
+
+---
+
 ## Template for new entries
 
 ```

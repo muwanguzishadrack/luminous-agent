@@ -1,5 +1,4 @@
 import { Form } from '@inertiajs/react';
-import { Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -21,9 +20,12 @@ type Props = {
 };
 
 /**
- * Meta does not permit `POST /{phone-number-id}/deregister` for a Coexistence
- * number, so the panel branches on `isOnBizApp` rather than offering a button
- * that would always fail (docs/reference/whatsapp-cloud-api.md §5).
+ * Disconnecting clears the connection from this workspace and leaves the
+ * number registered on the Cloud API (docs/modules/m0-onboarding.md §7).
+ *
+ * There is no deregister option, so there is nothing here to branch on: a
+ * Coexistence number (`is_on_biz_app`) disconnects like any other, and the
+ * copy says what stays behind rather than warning about a call we never make.
  */
 export default function WhatsAppDisconnectCard({ number, canManage }: Props) {
     const [open, setOpen] = useState(false);
@@ -37,74 +39,34 @@ export default function WhatsAppDisconnectCard({ number, canManage }: Props) {
             />
 
             <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-                {number.isOnBizApp ? (
-                    <div
-                        className="space-y-3"
-                        data-test="whatsapp-coexistence-disconnect"
+                <div className="space-y-0.5 text-red-600 dark:text-red-100">
+                    <p className="font-medium">Warning</p>
+                    <p className="text-sm">
+                        Disconnecting removes {number.displayPhoneNumber} and
+                        this workspace&rsquo;s stored WhatsApp credentials from
+                        Luminous, and stops Meta sending us this
+                        account&rsquo;s notifications. You will need to run
+                        Embedded Signup again to reconnect.
+                    </p>
+                    <p className="text-sm">
+                        The number itself is left alone: it stays registered on
+                        the WhatsApp Cloud API and keeps working
+                        {number.isOnBizApp
+                            ? ', including in the WhatsApp Business app on the handset'
+                            : ''}
+                        . Conversation history is kept.
+                    </p>
+                </div>
+
+                {canManage ? (
+                    <Button
+                        variant="destructive"
+                        data-test="whatsapp-disconnect-button"
+                        onClick={() => setOpen(true)}
                     >
-                        <div className="flex items-start gap-3 text-red-600 dark:text-red-100">
-                            <Smartphone className="mt-0.5 size-4 shrink-0" />
-                            <div className="space-y-1">
-                                <p className="font-medium">
-                                    Disconnect from the WhatsApp Business app
-                                </p>
-                                <p className="text-sm">
-                                    {number.displayPhoneNumber} is a Coexistence
-                                    number &mdash; it is still linked to the
-                                    WhatsApp Business app on a phone. Meta does
-                                    not allow it to be disconnected from here.
-                                </p>
-                            </div>
-                        </div>
-
-                        <ol className="ml-7 list-decimal space-y-1 text-sm text-red-600 dark:text-red-100">
-                            <li>
-                                Open the WhatsApp Business app on the phone
-                                holding {number.displayPhoneNumber}.
-                            </li>
-                            <li>
-                                Go to <strong>Settings</strong> &rarr;{' '}
-                                <strong>Account</strong> &rarr;{' '}
-                                <strong>Business Platform</strong>.
-                            </li>
-                            <li>
-                                Tap <strong>Disconnect</strong>.
-                            </li>
-                        </ol>
-
-                        <p className="ml-7 text-sm text-red-600 dark:text-red-100">
-                            Meta then notifies Luminous and the connection is
-                            cleared here automatically.
-                        </p>
-                    </div>
-                ) : (
-                    <>
-                        <div className="space-y-0.5 text-red-600 dark:text-red-100">
-                            <p className="font-medium">Warning</p>
-                            <p className="text-sm">
-                                Disconnecting deregisters{' '}
-                                {number.displayPhoneNumber} from the Cloud API
-                                and removes this workspace&rsquo;s WhatsApp
-                                access. You will need to run Embedded Signup
-                                again to reconnect.
-                            </p>
-                            <p className="text-sm">
-                                Meta will refuse the request if this number sent
-                                paid messages in the last 30 days.
-                            </p>
-                        </div>
-
-                        {canManage ? (
-                            <Button
-                                variant="destructive"
-                                data-test="whatsapp-disconnect-button"
-                                onClick={() => setOpen(true)}
-                            >
-                                Disconnect WhatsApp
-                            </Button>
-                        ) : null}
-                    </>
-                )}
+                        Disconnect WhatsApp
+                    </Button>
+                ) : null}
             </div>
 
             <Dialog open={open} onOpenChange={setOpen}>
@@ -122,13 +84,14 @@ export default function WhatsAppDisconnectCard({ number, canManage }: Props) {
                                         Disconnect {number.displayPhoneNumber}?
                                     </DialogTitle>
                                     <DialogDescription>
-                                        This deregisters{' '}
+                                        This clears the WhatsApp Business
+                                        Account, number and stored credentials
+                                        from this workspace and unsubscribes us
+                                        from its notifications.{' '}
                                         {number.displayPhoneNumber} (
-                                        {number.verifiedName}) from the WhatsApp
-                                        Cloud API and clears this
-                                        workspace&rsquo;s WhatsApp Business
-                                        Account, number and stored credentials.
-                                        Conversation history is kept.
+                                        {number.verifiedName}) stays registered
+                                        on the WhatsApp Cloud API. Conversation
+                                        history is kept.
                                     </DialogDescription>
                                 </DialogHeader>
 

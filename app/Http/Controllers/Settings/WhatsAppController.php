@@ -6,7 +6,6 @@ use App\Actions\WhatsApp\DisconnectWhatsApp;
 use App\Actions\WhatsApp\RefreshWhatsAppConnection;
 use App\Actions\WhatsApp\UpdateBusinessProfile;
 use App\Enums\WhatsAppVertical;
-use App\Exceptions\CoexistenceDeregisterNotPermitted;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\UpdateWhatsAppProfileRequest;
 use App\Models\PhoneNumber;
@@ -119,8 +118,9 @@ class WhatsAppController extends Controller
     }
 
     /**
-     * Deregister the number and clear the connection. A Coexistence number is
-     * refused here as well as in the UI — Meta does not permit it.
+     * Clear the connection from this workspace. The number is left registered
+     * on the Cloud API — nothing here is refused by Meta, so a Coexistence
+     * number disconnects like any other.
      */
     public function disconnect(Request $request, DisconnectWhatsApp $disconnect): RedirectResponse
     {
@@ -129,9 +129,14 @@ class WhatsAppController extends Controller
         [$account, $number] = $this->connection();
 
         return $this->guarded(function () use ($disconnect, $account, $number, $request): RedirectResponse {
-            $disconnect->handle($account, $number, $request->user());
+            $unsubscribed = $disconnect->handle($account, $number, $request->user());
 
-            Inertia::flash('toast', ['type' => 'success', 'message' => __('WhatsApp disconnected.')]);
+            Inertia::flash('toast', $unsubscribed
+                ? ['type' => 'success', 'message' => __('WhatsApp disconnected. The number is still registered on the Cloud API.')]
+                // The disconnect itself went through; only the unsubscribe
+                // failed. Say so plainly — webhooks may keep arriving until
+                // the client removes the app in Business Manager.
+                : ['type' => 'warning', 'message' => __('WhatsApp disconnected, but Meta would not unsubscribe our app from this account. Remove Luminous in Meta Business Settings to stop the notifications.')]);
 
             return to_route('whatsapp.show');
         });
@@ -162,8 +167,6 @@ class WhatsAppController extends Controller
     {
         try {
             return $call();
-        } catch (CoexistenceDeregisterNotPermitted $e) {
-            return back()->withErrors(['meta' => $e->getMessage()]);
         } catch (GraphApiException $e) {
             return back()->withErrors(['meta' => $this->metaMessage($e)]);
         } catch (CredentialRevoked) {

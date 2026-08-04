@@ -202,14 +202,32 @@ The 21 `vertical` values: `ALCOHOL`, `APPAREL`, `AUTO`, `BEAUTY`, `EDU`, `ENTERT
 > These are **business-profile** verticals. They are not MBA's five supported verticals
 > (`92-decisions.md` D-018) — different list, different purpose.
 
-### Deregister
+### Deregister — documented, never called
+
+> **Luminous does not call this endpoint** (D-021). Disconnecting a team clears our records and
+> unsubscribes our app; the number stays registered. `deregister()` is deliberately absent from the
+> `GraphClient` contract. What follows is reference for reading Meta's behaviour, not a description
+> of ours.
 
 `POST /{phone-number-id}/deregister`, with two hard limits:
 
-- **Not permitted for a Coexistence number** (`is_on_biz_app: true`). The client disconnects from the
-  WhatsApp Business app instead (*Settings → Account → Business Platform → Disconnect*), which fires
-  `account_update` / `PARTNER_REMOVED`. Any disconnect UI must branch on `is_on_biz_app`.
+- **Not permitted for a Coexistence number** (`is_on_biz_app: true`). Unlinking the handset is the
+  client's own action in the WhatsApp Business app (*Settings → Account → Business Platform →
+  Disconnect*), which fires `account_update` / `PARTNER_REMOVED`.
 - A number cannot be deleted if it was used to send paid messages in the last 30 days.
+
+Also capped at **10 register/deregister attempts per number per rolling 72 hours** (`133016`, §8).
+Deregistering makes the number unusable with Cloud API and disables local storage on it, but does
+**not** delete the number or its message history; re-registering is the whole registration flow
+again, PIN included.
+
+None of that is needed to stop serving a WABA, which is why we don't. `DELETE
+/{waba-id}/subscribed_apps` unsubscribes our app and **immediately stops all webhook deliveries** for
+that account, leaving the number registered and working. It has none of deregister's limits and is
+permitted for a Coexistence number.
+
+*(Re-verified 2026-08-04 via Meta Developer Tools MCP: Registration, Phone Number Deregister API,
+Subscribed Apps API, Managing Webhooks.)*
 
 ---
 

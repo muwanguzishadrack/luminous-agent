@@ -75,13 +75,14 @@ interface GraphClient
      */
     public function updateBusinessProfile(string $phoneNumberId, array $fields): array;
 
-    /**
-     * POST /{phone-number-id}/deregister. Not permitted for a Coexistence
-     * number (`is_on_biz_app: true`) — the caller must branch before calling.
-     *
-     * @return array<string, mixed>
+    /*
+     * No deregister here on purpose. Disconnecting a team clears the
+     * connection from Luminous and leaves the number registered
+     * (docs/modules/m0-onboarding.md §7), so nothing may call
+     * POST /{phone-number-id}/deregister — the one Cloud API call that takes
+     * a client's number offline for every provider, capped at 10 attempts per
+     * 72 hours, and refused outright for a Coexistence number.
      */
-    public function deregister(string $phoneNumberId): array;
 
     /**
      * Resumable Upload API — uploads the bytes and returns the opaque file

@@ -63,11 +63,6 @@ class HttpGraphClient implements GraphClient
         ]);
     }
 
-    public function deregister(string $phoneNumberId): array
-    {
-        return $this->post("{$phoneNumberId}/deregister");
-    }
-
     public function uploadResumable(string $contents, string $mimeType, string $fileName): string
     {
         $session = $this->decode($this->request()->post($this->url(config('meta.app_id').'/uploads'), [

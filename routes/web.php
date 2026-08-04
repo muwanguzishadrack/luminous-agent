@@ -62,6 +62,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(EnsureTeamMembership::class)->group(function () {
         Route::post('settings/whatsapp/refresh', [WhatsAppController::class, 'refresh'])->name('whatsapp.refresh');
         Route::post('settings/whatsapp/profile', [WhatsAppController::class, 'updateProfile'])->name('whatsapp.profile.update');
+        // Clears the connection from this workspace and leaves the number
+        // registered on the Cloud API (docs/modules/m0-onboarding.md §7).
         Route::delete('settings/whatsapp', [WhatsAppController::class, 'disconnect'])->name('whatsapp.disconnect');
     });
 

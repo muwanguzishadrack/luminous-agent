@@ -116,9 +116,11 @@ UX requirements during sync:
 Ongoing: every message the owner sends from their handset arrives as `smb_message_echoes` and must be
 rendered in the thread with `messages.origin = 'owner_device'`.
 
-Offboarding: we **cannot** use Deregister on a Coexistence number. The client disconnects from
-*WhatsApp Business app → Settings → Account → Business Platform → Disconnect*, which fires
-`account_update` with `PARTNER_REMOVED` and a `disconnection_info` object.
+Offboarding: we **cannot** use Deregister on a Coexistence number — moot since D-021, as we never
+deregister anything, but it is why the old disconnect had to branch. Leaving Luminous is the ordinary
+disconnect (§7). Unlinking the *handset* is the client's own action in *WhatsApp Business app →
+Settings → Account → Business Platform → Disconnect*, which fires `account_update` with
+`PARTNER_REMOVED` and a `disconnection_info` object.
 
 Verify status any time:
 ```
@@ -194,7 +196,27 @@ is specified in `reference/whatsapp-cloud-api.md` §5.
 | Connected account | Number, display name, connection status, quality rating, messaging tier, throughput, platform type, Coexistence flag; WABA name, account review status, business verification status. **Two-step verification (`code_verification_status`: `VERIFIED`/`UNVERIFIED`) and display-name status (`name_status`: `APPROVED`/`AVAILABLE_WITHOUT_REVIEW`/`DECLINED`/`EXPIRED`/`PENDING_REVIEW`/`NONE`) are separate rows.** Never render one under the other's label | `GET /{phone-number-id}?fields=…`, `GET /{waba-id}` |
 | Business profile | Editable: about (1–139), address (≤256), description (≤512), email (≤128), websites (max 2, scheme required), vertical (21 values), profile picture. Validate client-side against the same limits so Meta's error is the exception, not the norm. Re-GET after every save — the write returns `{"success": true}` and echoes nothing | `GET\|POST /{phone-number-id}/whatsapp_business_profile` |
 | Billing | Payment-readiness state plus a link-out to Meta's billing centre. Tech Provider: the client attaches their own payment method and **we cannot see their spend** — the copy must not imply otherwise. `payment_configuration_update` drives the state; `131042` on send raises the blocking banner (§4) | `waba_accounts.payment_ready` |
-| Danger zone | Two-step PIN reset (`POST /{phone-number-id}`, no current PIN required — the escape hatch for `133005`) and disconnect. **Disconnect branches on `is_on_biz_app`:** a normal number deregisters; a Coexistence number cannot, and we instead show the WhatsApp Business app path (§3) | `POST /{phone-number-id}/deregister` |
+| Danger zone | Two-step PIN reset (`POST /{phone-number-id}`, no current PIN required — the escape hatch for `133005`) and disconnect (below) | `DELETE /{waba-id}/subscribed_apps` |
+
+**Disconnect is a Luminous-side operation. D-021: we never deregister.** It clears the WABA, the
+number, every vaulted business credential and the team's signup sessions, and calls
+`DELETE /{waba-id}/subscribed_apps` so Meta stops delivering that account's webhooks to us. The
+number stays registered on the Cloud API and keeps working — the client can reconnect through ES
+with no re-registration, or point the number at another provider.
+
+`POST /{phone-number-id}/deregister` is not called and has no caller anywhere; it is absent from the
+`GraphClient` contract on purpose. It is the one Cloud API call that takes a client's number offline
+for *every* provider until it is registered again with its six-digit PIN, it is capped at 10
+attempts per number per 72 hours (`133016`), it is refused outright after paid messages in the last
+30 days, and Meta refuses it for a Coexistence number at all — which is what used to leave those
+teams with no way out of Luminous short of unlinking the handset. There is therefore nothing left
+for the disconnect UI to branch on: a Coexistence number disconnects like any other.
+
+The unsubscribe is **best effort**. The reason to disconnect is usually a connection that is already
+broken (revoked token, app removed in Business Suite), which is precisely when that call fails. A
+failure is recorded on the audit entry (`webhooks_unsubscribed: false`, plus the reason) and
+surfaced as a warning telling the client to remove Luminous in Business Settings — it never blocks
+the disconnect, because a team must always be able to leave.
 
 ---
 
@@ -231,5 +253,7 @@ is specified in `reference/whatsapp-cloud-api.md` §5.
 7. Onboarding always lands in the signed-in user's own team: a second ES run on a team that already
    holds a WABA is refused, and a user who already belongs to a team cannot accept an invitation to
    another. Both asserted by tests.
-8. `/settings/whatsapp` renders `code_verification_status` and `name_status` as separate rows, and
-   offers deregister only when `is_on_biz_app` is false.
+8. `/settings/whatsapp` renders `code_verification_status` and `name_status` as separate rows.
+9. Every connected team can leave: disconnecting clears the connection without calling deregister,
+   works for a Coexistence number, and survives a Graph failure on the unsubscribe. Asserted by
+   tests.

@@ -97,11 +97,6 @@ class FakeGraphClient implements GraphClient
         ], fallback: ['success' => true]);
     }
 
-    public function deregister(string $phoneNumberId): array
-    {
-        return $this->record('POST', "{$phoneNumberId}/deregister", [], fallback: ['success' => true]);
-    }
-
     public function uploadResumable(string $contents, string $mimeType, string $fileName): string
     {
         $handle = $this->record('POST', 'uploads', [

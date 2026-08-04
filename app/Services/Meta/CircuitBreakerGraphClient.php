@@ -67,11 +67,6 @@ class CircuitBreakerGraphClient implements GraphClient
         return $this->guard(fn (): array => $this->inner->updateBusinessProfile($phoneNumberId, $fields));
     }
 
-    public function deregister(string $phoneNumberId): array
-    {
-        return $this->guard(fn (): array => $this->inner->deregister($phoneNumberId));
-    }
-
     public function uploadResumable(string $contents, string $mimeType, string $fileName): string
     {
         return $this->guard(fn (): string => $this->inner->uploadResumable($contents, $mimeType, $fileName));
