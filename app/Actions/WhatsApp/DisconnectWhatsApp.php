@@ -6,6 +6,7 @@ use App\Enums\ActorType;
 use App\Enums\MetaCredentialType;
 use App\Exceptions\CoexistenceDeregisterNotPermitted;
 use App\Models\MetaCredential;
+use App\Models\OnboardingSession;
 use App\Models\PhoneNumber;
 use App\Models\User;
 use App\Models\WabaAccount;
@@ -54,6 +55,20 @@ class DisconnectWhatsApp
 
             $number->delete();
             $account->delete();
+
+            // The signup sessions go too. They describe a connection that no
+            // longer exists, and the newest one saying "complete" made the
+            // launcher report the team as connected with nothing behind it —
+            // and would have offered to resume a finished flow. The audit log
+            // keeps the history.
+            //
+            // Scoped by hand: OnboardingSession carries no BelongsToTeam
+            // trait, because webhook-time inserts land before team context
+            // exists. An unscoped delete would take other teams' sessions and
+            // the platform-level team_id IS NULL rows with it.
+            OnboardingSession::query()
+                ->where('team_id', $account->team_id)
+                ->delete();
 
             // Inside the transaction on purpose. Auditing a destructive
             // action is not optional, so a failure here must take the

@@ -333,7 +333,7 @@ export default function OnboardingIndex({
                 featureType: featureType ?? previous?.featureType ?? null,
                 nonce: null,
             }));
-            router.reload({ only: ['session'] });
+            router.reload({ only: ['session', 'connectedWabaId'] });
         } catch (error) {
             setClientError(
                 error instanceof Error
@@ -517,7 +517,7 @@ export default function OnboardingIndex({
                       }
                     : previous,
             );
-            router.reload({ only: ['session'] });
+            router.reload({ only: ['session', 'connectedWabaId'] });
         } catch (error) {
             setClientError(
                 error instanceof Error
@@ -602,7 +602,12 @@ export default function OnboardingIndex({
                     </Alert>
                 )}
 
-                {isComplete || connectedWabaId !== null ? (
+                {/* Keyed off the WABA row, never the session status: a
+                    session records how a connection was once established and
+                    outlives it, so a completed one kept claiming "connected"
+                    after a disconnect. The row is the state; the session is
+                    the history. */}
+                {connectedWabaId !== null ? (
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-2">

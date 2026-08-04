@@ -4,6 +4,7 @@ use App\Enums\MetaCredentialType;
 use App\Enums\TeamRole;
 use App\Enums\WhatsAppVertical;
 use App\Models\MetaCredential;
+use App\Models\OnboardingSession;
 use App\Models\PhoneNumber;
 use App\Models\User;
 use App\Models\WabaAccount;
@@ -400,6 +401,69 @@ test('disconnecting clears credentials that were never linked to the waba', func
 });
 
 /**
+ * A completed session outlived the connection it described, so the Connect
+ * WhatsApp launcher kept reporting the team as connected with nothing behind
+ * it — and would have offered to resume a finished flow.
+ */
+test('disconnecting clears the team onboarding sessions', function () {
+    ['user' => $user] = connectedTeam();
+
+    OnboardingSession::factory()->create([
+        'team_id' => $user->team->id,
+        'status' => 'complete',
+    ]);
+
+    // Assert it is really there first — otherwise "0 afterwards" passes
+    // whether the delete worked or the row was never written.
+    expect(OnboardingSession::query()->where('team_id', $user->team->id)->count())->toBe(1);
+
+    fakeGraph();
+
+    $this->actingAs($user)->delete(route('whatsapp.disconnect'));
+
+    Teams::initialize($user->team);
+
+    expect(OnboardingSession::query()->where('team_id', $user->team->id)->count())->toBe(0);
+});
+
+/**
+ * OnboardingSession has no BelongsToTeam trait — webhook inserts land before
+ * team context exists — so the delete is scoped by hand. An unscoped one would
+ * take other teams' sessions and the platform-level team_id IS NULL rows too.
+ */
+test('disconnecting leaves other teams and platform sessions alone', function () {
+    ['user' => $user] = connectedTeam();
+
+    $other = User::factory()->withTeam()->create();
+
+    OnboardingSession::factory()->create([
+        'team_id' => $other->team->id,
+        'status' => 'complete',
+    ]);
+
+    OnboardingSession::factory()->create([
+        'team_id' => null,
+        'status' => 'started',
+    ]);
+
+    fakeGraph();
+
+    $this->actingAs($user)->delete(route('whatsapp.disconnect'));
+
+    // Read each side under its own team context. RLS hides another team's
+    // rows, so a single-context read cannot tell "deleted" from "invisible" —
+    // and the migrator connection cannot see into this test's transaction.
+    Teams::initialize($other->team);
+
+    expect(OnboardingSession::query()->where('team_id', $other->team->id)->count())->toBe(1)
+        ->and(OnboardingSession::query()->whereNull('team_id')->count())->toBe(1);
+
+    Teams::initialize($user->team);
+
+    expect(OnboardingSession::query()->where('team_id', $user->team->id)->count())->toBe(0);
+});
+
+/**
  * The disconnect and its audit entry are one transaction. Auditing a
  * destructive action is not optional: a failure to record it must undo the
  * disconnect rather than leave the connection torn down with no trace of who
@@ -434,6 +498,12 @@ test('a failed audit write rolls the disconnect back', function () {
     expect(WabaAccount::query()->count())->toBe(1)
         ->and(PhoneNumber::query()->count())->toBe(1)
         ->and(MetaCredential::query()->count())->toBe(1);
+
+    // The migrator connection sits outside this test's transaction, so its
+    // write committed for real — undo it by hand rather than leaving a
+    // poisoned sequence for whatever runs next.
+    $migrator->table('audit_logs')->where('id', 500)->delete();
+    $migrator->statement("SELECT setval('audit_logs_id_seq', 1, false)");
 });
 
 test('a coexistence number is never deregistered and is given the handset path instead', function () {

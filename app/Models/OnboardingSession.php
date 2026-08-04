@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Database\Factories\OnboardingSessionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -28,6 +30,9 @@ use Illuminate\Support\Carbon;
 #[Fillable(['nonce', 'feature_type', 'es_version', 'events', 'waba_id', 'phone_number_id', 'code_exchanged_at', 'history_sync_requested_at', 'history_sync_completed_at', 'contacts_sync_requested_at', 'status', 'failure'])]
 class OnboardingSession extends Model
 {
+    /** @use HasFactory<OnboardingSessionFactory> */
+    use HasFactory;
+
     use HasUuids;
 
     /**
