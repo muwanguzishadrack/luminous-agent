@@ -51,6 +51,11 @@ return new class extends Migration
             $table->boolean('pin_set')->default(false); // 2FA PIN configured
             $table->jsonb('profile'); // about, address, description, email, websites, vertical, ...
             $table->string('status'); // enum: pending|active|disconnected (app-level)
+            // Meta's own `status` on the number node, e.g. CONNECTED. Kept
+            // apart from the app-level column above: they answer different
+            // questions and conflating them would misreport both. Nullable —
+            // unknown until the first sync.
+            $table->string('connection_status')->nullable();
         });
 
         Schema::create('meta_credentials', function (Blueprint $table) {

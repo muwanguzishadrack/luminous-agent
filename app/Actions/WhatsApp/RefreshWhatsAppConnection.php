@@ -22,7 +22,7 @@ class RefreshWhatsAppConnection
      * and `name_status` are both requested because they are distinct fields:
      * two-step verification state and display-name review state.
      */
-    public const NUMBER_FIELDS = 'display_phone_number,verified_name,quality_rating,code_verification_status,name_status,throughput,platform_type,is_on_biz_app';
+    public const NUMBER_FIELDS = 'display_phone_number,verified_name,quality_rating,code_verification_status,name_status,status,throughput,platform_type,is_on_biz_app';
 
     /**
      * The messaging limit belongs to the business portfolio and is read from
@@ -51,6 +51,7 @@ class RefreshWhatsAppConnection
             'quality_rating' => $this->string($remote, 'quality_rating'),
             'code_verification_status' => $this->string($remote, 'code_verification_status'),
             'name_status' => $this->string($remote, 'name_status'),
+            'connection_status' => $this->string($remote, 'status'),
             'throughput_level' => isset($throughput['level']) ? (string) $throughput['level'] : null,
             'platform_type' => $this->string($remote, 'platform_type'),
         ], fn (?string $value): bool => $value !== null);

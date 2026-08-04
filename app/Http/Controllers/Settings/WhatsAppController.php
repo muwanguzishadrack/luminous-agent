@@ -63,6 +63,9 @@ class WhatsAppController extends Controller
                 'codeVerificationStatus' => $number->code_verification_status,
                 // Display-name review state — a different field entirely.
                 'nameStatus' => $number->name_status,
+                // Meta's `status` on the number node. `status` below is our
+                // own lifecycle value and means something different.
+                'connectionStatus' => $number->connection_status,
                 'pinSet' => $number->pin_set,
                 'status' => $number->status,
                 'lastSyncedAt' => $number->last_synced_at?->toISOString(),

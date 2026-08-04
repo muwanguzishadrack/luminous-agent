@@ -156,8 +156,10 @@ Graph `v26.0` via the Meta Developer Tools MCP. They are what `/settings/whatsap
 |---|---|
 | `display_phone_number` | as Meta formats it, e.g. `+256 762 850388` |
 | `verified_name` | string |
+| `status` | Meta's connection state for the number, e.g. `CONNECTED`. **Meta does not publish the returnable value set** — render what arrives rather than switching on a guessed enum. Not to be confused with our own `phone_numbers.status` lifecycle column |
 | `quality_rating` | `GREEN` \| `YELLOW` \| `RED` \| `NA` \| `UNKNOWN` (a number Meta has not rated yet — what a freshly connected number returns) |
-| `code_verification_status` | **`VERIFIED` \| `UNVERIFIED` only** — two-step verification state |
+| `code_verification_status` | ⚠️ Meta's own docs disagree: the Phone Number API reference says `VERIFIED` \| `UNVERIFIED`, the Solution Providers "Client phone numbers" doc says `VERIFIED` \| `NOT_VERIFIED`. Store what arrives and make the UI tolerate both. Never a display-name state |
+| ~~`code_verification_status`~~ | **`VERIFIED` \| `UNVERIFIED` only** — two-step verification state |
 | `name_status` | `APPROVED` \| `AVAILABLE_WITHOUT_REVIEW` \| `DECLINED` \| `EXPIRED` \| `PENDING_REVIEW` \| `NONE` — display-name review state |
 | `status` | `CONNECTED`, … |
 | `throughput{level}` | `STANDARD` (80 mps) \| `HIGH` (1,000 mps) \| `NOT_APPLICABLE` |

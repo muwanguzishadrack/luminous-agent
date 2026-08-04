@@ -210,6 +210,51 @@ test('the messaging limit comes from the portfolio, never the deprecated per-num
 });
 
 /**
+ * Meta's `status` on the number node and our own lifecycle `status` column
+ * share a name and mean different things. The panel shows Meta's; conflating
+ * them would misreport both.
+ */
+test('meta connection status is carried separately from our lifecycle status', function () {
+    ['user' => $user, 'account' => $account, 'number' => $number] = connectedTeam();
+
+    expect(RefreshWhatsAppConnection::NUMBER_FIELDS)->toContain('status');
+
+    $fake = fakeGraph();
+    $fake->fake("GET {$number->phone_number_id}", ['status' => 'CONNECTED']);
+    $fake->fake("GET {$account->waba_id}", []);
+    fakeProfileRead($fake, $number);
+
+    $this->actingAs($user)->post(route('whatsapp.refresh'));
+
+    Teams::initialize($user->team);
+
+    expect($number->fresh()->connection_status)->toBe('CONNECTED')
+        // Untouched by the Graph read — it is ours, not Meta's.
+        ->and($number->fresh()->status)->toBe('active');
+
+    $this->actingAs($user)
+        ->get(route('whatsapp.show'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('phoneNumber.connectionStatus', 'CONNECTED')
+            ->where('phoneNumber.status', 'active'));
+});
+
+/**
+ * Meta does not publish the returnable value set for `status`, so we store
+ * what arrives and never substitute a default of our own.
+ */
+test('an unsynced connection status stays null rather than being guessed', function () {
+    ['user' => $user] = connectedTeam();
+
+    Teams::initialize($user->team);
+    PhoneNumber::query()->first()?->forceFill(['connection_status' => null])->save();
+
+    $this->actingAs($user)
+        ->get(route('whatsapp.show'))
+        ->assertInertia(fn (Assert $page) => $page->where('phoneNumber.connectionStatus', null));
+});
+
+/**
  * Nothing may invent a limit. A portfolio Meta has not rated yet reads as
  * null, and the panel says "Not yet assigned" rather than guessing a tier.
  */

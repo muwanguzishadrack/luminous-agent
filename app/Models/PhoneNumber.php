@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $registered_at
  * @property bool $pin_set
  * @property array<string, mixed> $profile
+ * @property string|null $connection_status
  * @property string $status
  * @property Carbon|null $last_synced_at
  * @property-read Team $team
@@ -40,7 +41,7 @@ use Illuminate\Support\Carbon;
  * @property-read MbaAgent|null $mbaAgent
  * @property-read Collection<int, HealthEvent> $healthEvents
  */
-#[Fillable(['waba_account_id', 'phone_number_id', 'display_phone_number', 'verified_name', 'code_verification_status', 'name_status', 'quality_rating', 'throughput_level', 'platform_type', 'is_on_biz_app', 'is_official_business_account', 'registered_at', 'pin_set', 'profile', 'status', 'last_synced_at'])]
+#[Fillable(['waba_account_id', 'phone_number_id', 'display_phone_number', 'verified_name', 'code_verification_status', 'name_status', 'quality_rating', 'throughput_level', 'platform_type', 'connection_status', 'is_on_biz_app', 'is_official_business_account', 'registered_at', 'pin_set', 'profile', 'status', 'last_synced_at'])]
 class PhoneNumber extends Model
 {
     use BelongsToTeam, HasUuids;

@@ -33,6 +33,13 @@ export type WhatsAppPhoneNumber = {
     isOnBizApp: boolean;
     codeVerificationStatus: WhatsAppCodeVerificationStatus | string;
     nameStatus: WhatsAppNameStatus | string;
+    /**
+     * Meta's own `status` on the number node — `CONNECTED` when live. Meta
+     * does not publish the full value set, so this stays a plain string and
+     * the UI renders whatever comes back. Null until the first sync. Distinct
+     * from `status`, which is our lifecycle value.
+     */
+    connectionStatus: string | null;
     pinSet: boolean;
     status: string;
     lastSyncedAt: string | null;

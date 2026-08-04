@@ -101,7 +101,7 @@ class SyncWabaAssets extends OnboardingStep
         }
 
         $numbers = $client->get("{$wabaId}/phone_numbers", [
-            'fields' => 'id,verified_name,display_phone_number,quality_rating,throughput,platform_type,is_on_biz_app,code_verification_status,name_status',
+            'fields' => 'id,verified_name,display_phone_number,quality_rating,throughput,platform_type,is_on_biz_app,code_verification_status,name_status,status',
         ]);
 
         $onboarded = (string) $session->phone_number_id;
@@ -170,6 +170,10 @@ class SyncWabaAssets extends OnboardingStep
             'code_verification_status' => (string) ($number['code_verification_status'] ?? 'UNVERIFIED'),
             'quality_rating' => (string) ($number['quality_rating'] ?? 'UNKNOWN'),
             'name_status' => (string) ($number['name_status'] ?? 'NONE'),
+            // Meta's connection state. Left null rather than guessed — the
+            // returnable value set is not published, so any default we chose
+            // would be an invention.
+            'connection_status' => isset($number['status']) ? (string) $number['status'] : null,
             'throughput_level' => (string) ($throughput['level'] ?? 'STANDARD'),
             'platform_type' => (string) ($number['platform_type'] ?? 'CLOUD_API'),
             'is_on_biz_app' => (bool) ($number['is_on_biz_app'] ?? false),

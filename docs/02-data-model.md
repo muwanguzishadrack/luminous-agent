@@ -115,7 +115,7 @@ already holds a WABA is refused, not merged.
 | phone_number_id | varchar unique | Meta business phone number ID |
 | display_phone_number | varchar | E.164-ish as Meta returns it |
 | verified_name | varchar | |
-| code_verification_status | varchar | `VERIFIED` or `UNVERIFIED` **only** — two-step verification state |
+| code_verification_status | varchar | two-step verification state. Meta's docs disagree on the value set (`UNVERIFIED` vs `NOT_VERIFIED`) — store what arrives, see `reference/whatsapp-cloud-api.md` §5. **Never a display-name state** |
 | name_status | varchar | display-name review state: `APPROVED`, `AVAILABLE_WITHOUT_REVIEW`, `DECLINED`, `EXPIRED`, `PENDING_REVIEW`, `NONE`. **A different field from `code_verification_status`** — see `reference/whatsapp-cloud-api.md` §5 |
 | quality_rating | enum | `GREEN`, `YELLOW`, `RED`, `UNKNOWN` |
 | throughput_level | varchar | `STANDARD`, `HIGH`, … |
@@ -125,7 +125,8 @@ already holds a WABA is refused, not merged.
 | registered_at | timestamptz null | |
 | pin_set | boolean | 2FA PIN configured |
 | profile | jsonb | about, address, description, email, websites, vertical, profile picture handle |
-| status | enum | `pending`, `active`, `disconnected` |
+| connection_status | varchar null | Meta's `status` on the number node, e.g. `CONNECTED`. Null until first sync and **never defaulted** — Meta does not publish the returnable value set |
+| status | enum | `pending`, `active`, `disconnected` — **app-level lifecycle**, a different thing from `connection_status` above |
 
 Unique: `(team_id)`. **One phone number per team** (D-020). `waba_account_id` is therefore always
 the team's single WABA; it stays as a column so Meta's asset graph is still modelled honestly.

@@ -191,6 +191,26 @@ export default function WhatsAppConnectionPanel({
                     </Badge>
                 </Field>
 
+                {/* Meta's `status` on the number node, not our lifecycle
+                    column of the same name. Meta does not publish the full
+                    value set, so anything other than CONNECTED renders
+                    neutrally rather than being guessed at. */}
+                <Field label="Connection status">
+                    <Badge
+                        variant="outline"
+                        className={cn(
+                            number.connectionStatus === 'CONNECTED'
+                                ? 'border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                                : 'border-transparent bg-muted text-muted-foreground',
+                        )}
+                        data-test="whatsapp-connection-status"
+                    >
+                        {number.connectionStatus === null
+                            ? 'Unknown'
+                            : formatEnum(number.connectionStatus)}
+                    </Badge>
+                </Field>
+
                 {/* code_verification_status — VERIFIED or UNVERIFIED, nothing
                     else. Never labelled as a display-name state. */}
                 <Field label="Two-step verification">

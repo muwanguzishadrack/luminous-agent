@@ -27,6 +27,7 @@ class PhoneNumberFactory extends Factory
             'verified_name' => fake()->company(),
             'code_verification_status' => 'VERIFIED',
             'quality_rating' => 'GREEN',
+            'connection_status' => 'CONNECTED',
             'throughput_level' => 'STANDARD',
             'platform_type' => 'CLOUD_API',
             'is_on_biz_app' => false,
